@@ -1,7 +1,8 @@
 """LLM Router с fallback, retry, PII-masking и cost-метриками.
 
-Поддерживаемые провайдеры: fake, yandex, gigachat, llama, openai.
+Поддерживаемые провайдеры: fake, yandex, gigachat, llama, openai, qwen.
 """
+
 from __future__ import annotations
 
 import logging
@@ -23,6 +24,8 @@ _COST_PER_1K: dict[str, dict[str, float]] = {
     "gigachat": {"prompt": 0.0004, "completion": 0.0012},
     "llama": {"prompt": 0.0009, "completion": 0.0009},
     "openai": {"prompt": 0.01, "completion": 0.03},
+    # Qwen Cloud (qwen-max) — приблизительная цена DashScope-intl.
+    "qwen": {"prompt": 0.0016, "completion": 0.0064},
     "fake": {"prompt": 0.0, "completion": 0.0},
 }
 
@@ -85,13 +88,23 @@ def _import_openai():
     return OpenAILLM
 
 
+def _import_qwen():
+    from .qwen import QwenLLM
+
+    return QwenLLM
+
+
 _REGISTRY = {
     "fake": lambda: FakeLLM,
     "yandex": _import_yandex,
     "gigachat": _import_gigachat,
     "llama": _import_llama,
     "openai": _import_openai,
+    "qwen": _import_qwen,
 }
+
+# Провайдеры, чей клиент выбирает модель в зависимости от роли (primary/verifier).
+_ROLE_AWARE = {"qwen"}
 
 
 @lru_cache(maxsize=8)
@@ -103,6 +116,8 @@ def get_llm(role: str = "primary") -> LLMClient:
     if name not in _REGISTRY:
         raise ValueError(f"Unknown LLM provider: {name}")
     cls = _REGISTRY[name]()
+    if name in _ROLE_AWARE:
+        return cls(role=role)
     return cls()
 
 
@@ -169,7 +184,10 @@ async def complete_with_fallback(
         raise RuntimeError(f"primary ({primary.name}) failed and fallback is same provider")
 
     fallback_cls = _REGISTRY[fallback_name]()
-    fallback = fallback_cls()
+    if fallback_name in _ROLE_AWARE:
+        fallback = fallback_cls(role="verifier" if role == "verifier" else "fallback")
+    else:
+        fallback = fallback_cls()
     fb_started = time.time()
     try:
         resp = await fallback.complete(system, masked_user, **kwargs)

@@ -2,17 +2,44 @@
 
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
-[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Автономный мульти-агентный сервис закупок: «грязная» заявка → 6 поставщиков → 3 коммерческих предложения → сравнительная таблица с обоснованием. Все решения логируются и аудируются.
+
+---
+
+## 🏆 Qwen Cloud Global AI Hackathon — «SnabAgent: Qwen-Powered Autopilot for Enterprise Procurement»
+
+**Трек:** Autopilot Agent (+ MemoryAgent + Agent Society).
+SnabAgent — это production-ready автопилот закупок: 8 агентов на LangGraph, независимый
+верификатор на отдельной модели Qwen (анти-галлюцинации), долговременная память
+(самообучение) и полный аудит-трейл. LLM — **Qwen Cloud (Alibaba DashScope)**, деплой — **Alibaba Cloud ECS**.
+
+**Запуск на Qwen за 3 шага:**
+```bash
+cp .env.example .env
+# в .env выставить:
+#   LLM_PRIMARY=qwen   LLM_FALLBACK=qwen   LLM_VERIFIER=qwen   LLM_VERIFIER_FALLBACK=qwen
+#   LLM_QWEN_API_KEY=sk-...   (ключ DashScope / Model Studio)
+make dev            # или см. deploy/alibaba/ для ECS
+```
+- Провайдер Qwen: <src/snabagent/llm/qwen.py> (OpenAI-compatible, `dashscope-intl` endpoint).
+- Разные модели для reasoning и верификатора: `qwen-max` (primary) vs `qwen-plus` (verifier) —
+  анти-галлюцинационная гарантия сохраняется, роутер это проверяет на старте.
+- Долговременная память (MemoryAgent): узлы `Memory Recall` / `Memory Writeback`,
+  таблицы `company_profiles` / `supplier_memory` / `lot_decision_memory`.
+- Деплой на Alibaba Cloud: <deploy/alibaba/> (ECS-гайд, docker-compose, architecture diagram, deploy.sh).
+
+---
 
 ## Что внутри
 
 | Слой | Стек |
 |---|---|
-| LLM-роутер | YandexGPT 5 Pro · GigaChat 2 Pro · Llama 3.3 70B · GPT-4.1 (dev, с PII-masking) · **FakeLLM** для оффлайна |
-| Граф агентов | LangGraph (Planner → Sourcer → Communicator → Negotiator → Verifier → Reporter) |
+| LLM-роутер | **Qwen Cloud (qwen-max / qwen-plus)** · YandexGPT 5 Pro · GigaChat 2 Pro · Llama 3.3 70B · GPT-4.1 (dev, с PII-masking) · **FakeLLM** для оффлайна |
+| Граф агентов | LangGraph (Memory Recall → Planner → Sourcer → Communicator → Negotiator → Verifier → Reporter → Memory Writeback) |
+| Память (MemoryAgent) | PostgreSQL: профиль компании, скоры надёжности поставщиков (EMA), история решений |
 | API | FastAPI + WebSocket + Mailcow webhook |
 | UI | Streamlit (аудит-tree, Top-3, Approve/Reject) |
 | Хранилище | PostgreSQL 16 · Qdrant 1.12 · Redis 7 |
@@ -106,14 +133,18 @@ Caddy в `deploy/caddy/Caddyfile` автоматически выпустит Le
                   │   LangGraph    │
                   │  StateGraph    │
                   └─┬──┬──┬──┬──┬─┘
-              planner sourcer communicator negotiator verifier reporter
-                          ↑   ↓
-                    [LLM router]
+   memory_recall → planner sourcer communicator negotiator verifier reporter → memory_writeback
+                          ↑   ↓                          ↑
+                    [LLM router]                  [independent model]
+                          │                              │
+      Qwen (qwen-max) / Yandex / GigaChat / Llama    Qwen (qwen-plus)
                           │
-                 Yandex / GigaChat / Llama / FakeLLM
+                 Persistent memory (Postgres): profile · supplier reliability · past lots
 ```
 
-Подробности по каждому агенту — `docs/prompts/*.md`. Все промпты также вынесены в `src/snabagent/agents/prompts/*.j2`.
+Диаграмма высокого качества (Mermaid) с потоком Qwen → агенты → БД — в
+<deploy/alibaba/architecture.md>. Подробности по каждому агенту — `docs/prompts/*.md`.
+Все промпты также вынесены в `src/snabagent/agents/prompts/*.j2`.
 
 ## Промпты и решения
 
@@ -191,7 +222,7 @@ curl http://localhost:8000/auth/me -H "Authorization: Bearer <JWT>"
 ## Безопасность
 
 * `.env` НЕ коммитится. `.env.example` без секретов.
-* PII (ИНН, ОГРН, email, phone) маскируется перед отправкой в OpenAI (см. `src/snabagent/llm/pii_masker.py`).
+* PII (ИНН, ОГРН, email, phone) маскируется перед отправкой в любую внешнюю LLM, включая Qwen Cloud (см. `src/snabagent/llm/pii_masker.py`).
 * Логи — structlog JSON + PII-mask processor.
 * В prod OpenAI запрещён по умолчанию (`LLM_ENABLE_OPENAI_IN_PROD=false`).
 
@@ -221,4 +252,4 @@ snabagent/
 
 ## Лицензия
 
-Internal — Confidential.
+[MIT](LICENSE) © 2026 SnabAgent Team.

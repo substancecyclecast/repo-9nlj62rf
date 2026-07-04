@@ -1,4 +1,7 @@
-"""LangGraph StateGraph: Planner → Sourcer → Communicator → [Negotiator] → Verifier → Reporter."""
+"""LangGraph StateGraph:
+MemoryRecall → Planner → Sourcer → Communicator → [Negotiator] → Verifier → Reporter → MemoryWriteback.
+"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -7,6 +10,7 @@ from ..db.models import LotStatus
 from ..db.repositories import LotRepo
 from ..db.session import AsyncSessionLocal
 from .communicator import communicator_node
+from .memory import memory_recall_node, memory_writeback_node
 from .negotiator import negotiator_node
 from .planner import planner_node
 from .reporter import reporter_node
@@ -29,22 +33,24 @@ def build_graph():
         return None
 
     g = StateGraph(LotState)
+    g.add_node("memory_recall", memory_recall_node)
     g.add_node("planner", planner_node)
     g.add_node("sourcer", sourcer_node)
     g.add_node("communicator", communicator_node)
     g.add_node("negotiator", negotiator_node)
     g.add_node("verifier", verifier_node)
     g.add_node("reporter", reporter_node)
+    g.add_node("memory_writeback", memory_writeback_node)
 
-    g.set_entry_point("planner")
-    g.add_conditional_edges(
-        "planner", _should_escalate, {"escalate": END, "continue": "sourcer"}
-    )
+    g.set_entry_point("memory_recall")
+    g.add_edge("memory_recall", "planner")
+    g.add_conditional_edges("planner", _should_escalate, {"escalate": END, "continue": "sourcer"})
     g.add_edge("sourcer", "communicator")
     g.add_edge("communicator", "negotiator")
     g.add_edge("negotiator", "verifier")
     g.add_edge("verifier", "reporter")
-    g.add_edge("reporter", END)
+    g.add_edge("reporter", "memory_writeback")
+    g.add_edge("memory_writeback", END)
 
     return g.compile()
 
@@ -73,7 +79,16 @@ async def run_lot(state: LotState) -> LotState:
 
 async def _run_sequential(state: LotState) -> LotState:
     out: dict[str, Any] = dict(state)
-    for node in (planner_node, sourcer_node, communicator_node, negotiator_node, verifier_node, reporter_node):
+    for node in (
+        memory_recall_node,
+        planner_node,
+        sourcer_node,
+        communicator_node,
+        negotiator_node,
+        verifier_node,
+        reporter_node,
+        memory_writeback_node,
+    ):
         update = await node(out)  # type: ignore[arg-type]
         if update:
             for k, v in update.items():

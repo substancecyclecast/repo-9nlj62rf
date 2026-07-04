@@ -3,6 +3,7 @@
 Используется JSON-колонка (sqlalchemy.JSON) вместо PG-специфичных типов,
 чтобы модели работали как на PostgreSQL (prod), так и на SQLite (offline-демо / тесты).
 """
+
 from __future__ import annotations
 
 import enum
@@ -88,9 +89,9 @@ class Customer(Base):
 
 
 class UserRole(str, enum.Enum):
-    admin = "admin"        # full access, может одобрять >1M, видит всех customer'ов
-    buyer = "buyer"        # создаёт лоты, одобряет лимит < approval_limit
-    viewer = "viewer"      # только просмотр
+    admin = "admin"  # full access, может одобрять >1M, видит всех customer'ов
+    buyer = "buyer"  # создаёт лоты, одобряет лимит < approval_limit
+    viewer = "viewer"  # только просмотр
 
 
 class User(Base):
@@ -180,9 +181,7 @@ class RfqEmail(Base):
     __tablename__ = "rfq_emails"
     id: Mapped[UUID] = mapped_column(UUIDStr, primary_key=True, default=uuid4)
     # nullable: IMAP-поллер сначала пишет письмо, потом маршрутизирует по Subject/To
-    lot_id: Mapped[UUID | None] = mapped_column(
-        UUIDStr, ForeignKey("lots.id", ondelete="CASCADE"), index=True, nullable=True
-    )
+    lot_id: Mapped[UUID | None] = mapped_column(UUIDStr, ForeignKey("lots.id", ondelete="CASCADE"), index=True, nullable=True)
     supplier_id: Mapped[UUID | None] = mapped_column(UUIDStr, ForeignKey("suppliers.id"))
     direction: Mapped[str] = mapped_column(String(10))
     subject: Mapped[str | None] = mapped_column(String(500))
@@ -252,6 +251,69 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
 
     lot: Mapped[Lot] = relationship(back_populates="audit_events")
+
+
+class CompanyProfile(Base):
+    """Долгосрочная память предпочтений компании (MemoryAgent).
+
+    Веса задают, что важнее при выборе поставщика: цена, срок или качество.
+    Обновляется по мере накопления решений; читается узлом memory_recall.
+    """
+
+    __tablename__ = "company_profiles"
+    id: Mapped[UUID] = mapped_column(UUIDStr, primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(UUIDStr, ForeignKey("customers.id", ondelete="CASCADE"), unique=True, index=True)
+    weight_price: Mapped[float] = mapped_column(Float, default=0.5)
+    weight_lead_time: Mapped[float] = mapped_column(Float, default=0.3)
+    weight_quality: Mapped[float] = mapped_column(Float, default=0.2)
+    preferred_regions: Mapped[list[str] | None] = mapped_column(JSON, default=list)
+    blacklisted_inns: Mapped[list[str] | None] = mapped_column(JSON, default=list)
+    notes: Mapped[str | None] = mapped_column(Text)
+    lots_processed: Mapped[int] = mapped_column(Integer, default=0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class SupplierMemory(Base):
+    """Накопленная память о поставщике для конкретной компании (MemoryAgent).
+
+    Обновляемый скор надёжности, доля вовремя, средняя цена/качество —
+    формируется из прошлых лотов и подмешивается в ранжирование Sourcer.
+    """
+
+    __tablename__ = "supplier_memory"
+    id: Mapped[UUID] = mapped_column(UUIDStr, primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(UUIDStr, ForeignKey("customers.id", ondelete="CASCADE"), index=True)
+    inn: Mapped[str] = mapped_column(String(20), index=True)
+    supplier_name: Mapped[str | None] = mapped_column(String(255))
+    times_seen: Mapped[int] = mapped_column(Integer, default=0)
+    times_selected: Mapped[int] = mapped_column(Integer, default=0)
+    on_time_count: Mapped[int] = mapped_column(Integer, default=0)
+    reliability_score: Mapped[float] = mapped_column(Float, default=0.5)
+    avg_quality: Mapped[float | None] = mapped_column(Float)
+    last_price_rub: Mapped[float | None] = mapped_column(Numeric(15, 2))
+    last_category: Mapped[str | None] = mapped_column(String(40))
+    notes: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+
+
+class LotDecisionMemory(Base):
+    """Память о прошлых решениях по лотам (MemoryAgent).
+
+    Позволяет узлу memory_recall находить похожие прошлые лоты той же
+    категории и подсказывать агентам исторический контекст.
+    """
+
+    __tablename__ = "lot_decision_memory"
+    id: Mapped[UUID] = mapped_column(UUIDStr, primary_key=True, default=uuid4)
+    customer_id: Mapped[UUID] = mapped_column(UUIDStr, ForeignKey("customers.id", ondelete="CASCADE"), index=True)
+    lot_id: Mapped[UUID | None] = mapped_column(UUIDStr, ForeignKey("lots.id", ondelete="SET NULL"))
+    category: Mapped[str | None] = mapped_column(String(40), index=True)
+    chosen_supplier_inn: Mapped[str | None] = mapped_column(String(20))
+    chosen_supplier_name: Mapped[str | None] = mapped_column(String(255))
+    total_rub: Mapped[float | None] = mapped_column(Numeric(15, 2))
+    savings_pct: Mapped[float | None] = mapped_column(Float)
+    summary: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(UTC), index=True)
 
 
 class HistoricalPurchase(Base):

@@ -1,4 +1,5 @@
 """Verifier должен отличаться от primary в реальном (не-fake) режиме."""
+
 from __future__ import annotations
 
 import pytest
@@ -26,3 +27,14 @@ def test_different_real_models_allowed() -> None:
 def test_verifier_fallback_default() -> None:
     s = LLMSettings()
     assert s.verifier_fallback == "fake"
+
+
+def test_qwen_verifier_allowed_when_models_differ() -> None:
+    """Для Qwen допускаем один провайдер, если модели primary/verifier различаются."""
+    s = LLMSettings(
+        primary="qwen",
+        verifier="qwen",
+        qwen_model="qwen-max",
+        qwen_verifier_model="qwen-plus",
+    )
+    assert s.primary == s.verifier == "qwen"

@@ -1,41 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
 .venv/
 venv/
-env/
-__pycache__/
-*.pyc
-*.pyo
 *.egg-info/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
-.coverage
-htmlcov/
-dist/
-build/
+
+# Databases / data
+backend/data/*.db
+*.sqlite3
+backups/
+
+# Env
 .env
-.env.local
+*.local
+
+# Node / Next
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# OS / editor
+.DS_Store
 .idea/
 .vscode/
-*.log
-data/local_storage/
-.streamlit/
-.cache/
-.DS_Store
-node_modules/
-qdrant_storage/
-pgdata/
-n8n_data/
-.terraform/
-*.tfstate
-*.tfstate.backup
-__pycache__/
-*.pyc
-*.egg-info/
-*.db
-
-# test/build artifacts
-*.db
-data/offline_demo_results.json
-data/benchmark_results.json
-coverage.xml
-frontend/dist/

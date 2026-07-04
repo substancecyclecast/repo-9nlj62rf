@@ -1,51 +1,56 @@
 # Changelog
 
-## [2.2.0] — 2026-06-15
+All notable changes to Mandate are documented here. This project adheres to
+[Semantic Versioning](https://semver.org/).
 
-### Fixed
-- **Деплой/стабильность демо** — устранён дублирующий systemd-сервис `snabagent.service` (краш-цикл на порту 8000) и добавлен 4 ГБ swap на VPS; latency login/health снизилась с 24–28 c до ~0.3–0.6 c.
-- **ruff** — исправлены `E402` (импорты в `db/models.py`) и `E501` (длинные строки в `api/routes/auth.py`); `ruff check src tests` снова чист.
-- **Frontend ESLint** — устранены все 20 ошибок: убраны `any` (типизированные хелперы `apiErrorStatus`/`apiErrorDetail`), исправлен порядок объявления в `Login.tsx`, упрощён regex проверки пароля.
+## [1.1.0] — Production hardening & monetization
 
-### Changed
-- **Версия** приведена к `2.2.0` во всех артефактах (`pyproject.toml`, доках, архиве).
-- **mypy** переведён в advisory-режим в CI (не блокирует пайплайн); строгая типизация вынесена в tech-debt.
-- **Документация** синхронизирована с реальными метриками: **238 тестов, покрытие 72 %** (gate ≥ 70 %).
-
-## [1.0.0] — 2026-06-04
+Adds the operational and revenue surface expected of an acquirable fintech SaaS,
+on top of the existing autonomous-CFO product. No breaking API changes.
 
 ### Added
-- **Public Registration** — `POST /api/v1/auth/register` with password policy, duplicate checks, trial activation (14 days)
-- **Rate Limiting** — 3/min on registration, 5/min on login (slowapi)
-- **CORS Middleware** — Configurable origins via `cors_origins` setting
-- **Request Tracing** — UUID-based `X-Request-ID` header on all requests
-- **Global Error Handler** — Structured JSON error responses with request_id
-- **Paginated Lots API** — `GET /api/v1/lots/` returns `{items, total, page, page_size, pages}`
-- **Telegram Webhook** — `POST /api/v1/webhooks/telegram` for bot commands
-- **SPA Static Serving** — React frontend served from `/frontend/dist`, fallback to `index.html`
-- **React Frontend** — Full SPA with:
-  - Landing page with pricing/features
-  - Registration with password strength indicator
-  - Login with success/error feedback
-  - Dashboard with KPI cards and lots table
-  - Lots list with pagination and status filter
-  - Lot detail with progress stepper, audit log, supplier cards
-  - Analytics page with Recharts (pie + bar charts)
-  - Settings page (profile, theme, API token)
-  - Dark mode (persisted in localStorage)
-  - Responsive sidebar navigation
-- **New Unit Tests** — language detection, metering, circuit breaker, email digest, telegram bot, price predictor, notifications
-- **New Integration Tests** — registration flow (success, duplicate, weak password, missing fields, login after register), health endpoint
-- **Architecture Documentation** — `docs/architecture.md`
-- **SAML 2.0 + OAuth2 SSO** — Stub routes for enterprise SSO
-- **Structured Logging** — structlog with JSON output in routes
+- **Observability**
+  - Prometheus exposition at `GET /metrics` (request counters/latency histograms,
+    emitted-event counters, rate-limit counters, uptime).
+  - `GET /healthz` (liveness) and `GET /readyz` (readiness — verifies the DB and
+    reports environment + integration mode).
+  - `RequestContextMiddleware`: per-request `X-Request-ID` and `X-Response-Time-ms`
+    headers, plus automatic metrics for every route (path templated to keep
+    cardinality low).
+- **Immutable audit trail** (`audit_logs`) recording every significant action
+  (agent runs, payroll execution) with actor, resource, and JSON detail; exposed
+  at `GET /api/v1/orgs/{id}/audit` and surfaced in the new Settings screen.
+- **Event notifications** (`webhook_deliveries` outbox) for Slack and Telegram,
+  emitted on payroll execution and agent runs. Durable in sandbox (status
+  `skipped`), live when `MANDATE_SLACK_WEBHOOK_URL` / Telegram creds are set.
+  Test endpoint: `POST /api/v1/orgs/{id}/webhooks/test`.
+- **Usage-based billing** (`billing_service`): bps take-rate on settled volume +
+  flat platform fee → current invoice, estimated MRR, lifetime revenue, and SWIFT
+  savings. Endpoints `GET …/billing/summary` and `GET …/billing/invoice`.
+- **Rate limiting** middleware (sliding window per IP, opt-in via
+  `MANDATE_RATE_LIMIT_ENABLED`), with health/metrics/docs exempt.
+- **Frontend**: new **Billing & Revenue** and **Settings & Admin** screens; both
+  wired to live backend data. `StatCard` gains a `blue` accent.
+- **Ops tooling**: `scripts/backup_db.sh` (SQLite online backup / `pg_dump` for
+  Postgres, with retention) and `scripts/export_openapi.py` (writes
+  `docs/api/openapi.json` + a Postman collection).
+- **CI**: `.github/workflows/ci.yml` runs backend ruff+pytest, frontend
+  typecheck+build, and a Soroban contract build.
 
 ### Changed
-- Lots list endpoint now returns paginated `PaginatedLots` instead of flat array
-- Auth routes removed `from __future__ import annotations` for Pydantic compatibility
-- `_OPEN_PATHS` extended with `/auth/register`, `/auth/verify-email`, `/webhooks/telegram`
+- `config.Settings` extended with rate-limit, webhook, and billing settings.
+- README/PROJECT_OVERVIEW updated to reflect the 7-screen dashboard and ops layer.
 
 ### Fixed
-- Rate limiting on login endpoint (was missing)
-- Password validation returns 422 instead of 400
-- Existing lots API tests updated for paginated response format
+- Cleared all pre-existing `ruff` findings (unused imports/vars) so the repo lints
+  clean, and resolved TypeScript errors in the Stellar screen so `next build`
+  passes with strict type checking.
+
+### Tests
+- Test suite grows from 59 to **66** passing (new `tests/test_ops.py` covers the
+  metrics registry, audit log, webhook outbox, billing math, and rate limiting).
+
+## [1.0.0] — Initial product
+- Multi-chain treasury, autonomous CFO agent, global payroll with cheapest-chain
+  routing, double-entry ledger, auditor PDF + QuickBooks CSV, Stellar/Soroban
+  policy + RWA, production auth/RBAC, and live adapter switching.

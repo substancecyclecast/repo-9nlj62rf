@@ -1,140 +1,45 @@
-version: "3.9"
-
 services:
-  postgres:
-    image: postgres:16-alpine
+  backend:
+    build: ./backend
+    container_name: mandate-backend
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-snab}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-snab_dev_only}
-      POSTGRES_DB: ${POSTGRES_DB:-snabagent}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Default to Postgres in compose; the app falls back to SQLite if unset.
+      MANDATE_DATABASE_URL: postgresql+psycopg://mandate:mandate@db:5432/mandate
+      MANDATE_INTEGRATION_MODE: sandbox
+      MANDATE_CORS_ORIGINS: "*"
+      MANDATE_SEED: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: mandate-frontend
+    environment:
+      MANDATE_API_BASE: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: mandate-db
+    environment:
+      POSTGRES_USER: mandate
+      POSTGRES_PASSWORD: mandate
+      POSTGRES_DB: mandate
     ports:
       - "5432:5432"
+    volumes:
+      - mandate_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-snab}"]
+      test: ["CMD-SHELL", "pg_isready -U mandate"]
       interval: 5s
       timeout: 5s
       retries: 10
 
-  qdrant:
-    image: qdrant/qdrant:v1.12.4
-    volumes:
-      - qdrant_storage:/qdrant/storage
-    ports:
-      - "6333:6333"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:6333/healthz || exit 1"]
-      interval: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  mailhog:
-    image: mailhog/mailhog:v1.0.1
-    ports:
-      - "1025:1025"   # SMTP
-      - "8025:8025"   # UI
-
-  n8n:
-    image: n8nio/n8n:1.74.1
-    environment:
-      - N8N_HOST=0.0.0.0
-      - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=${N8N_ADMIN_PASS:-admin}
-      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY:-local_dev_key_change_me}
-    volumes:
-      - n8n_data:/home/node/.n8n
-      - ./n8n/workflows:/data/workflows:ro
-    ports:
-      - "5678:5678"
-
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
-    env_file: .env
-    depends_on:
-      postgres:
-        condition: service_healthy
-      qdrant:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    command: uvicorn snabagent.api.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data
-      - ./scripts:/app/scripts
-      - ./alembic:/app/alembic
-      - ./alembic.ini:/app/alembic.ini
-      - ./frontend/dist:/app/frontend/dist:ro
-    ports:
-      - "8000:8000"
-
-  worker:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
-    env_file: .env
-    depends_on:
-      - postgres
-      - redis
-      - qdrant
-    command: celery -A snabagent.tasks.celery_app worker -l INFO -Q lots,emails -c 2
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data
-
-  streamlit:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: runtime
-    env_file: .env
-    environment:
-      - STREAMLIT_API_BASE=http://api:8000
-      - STREAMLIT_API_KEY=${API_KEY:-dev-only-key-change-in-prod}
-      - STREAMLIT_ADMIN_PASSWORD=${STREAMLIT_ADMIN_PASSWORD:-demo}
-    depends_on:
-      - api
-    command: streamlit run /app/src/snabagent/ui/streamlit_app.py --server.port=8501 --server.address=0.0.0.0
-    volumes:
-      - ./src:/app/src
-      - ./data:/app/data
-    ports:
-      - "8501:8501"
-
-  prometheus:
-    image: prom/prometheus:v2.52.0
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    ports:
-      - "9090:9090"
-    depends_on:
-      - api
-
-  grafana:
-    image: grafana/grafana:11.0.0
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS:-admin}
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/dashboards:ro
-      - grafana_data:/var/lib/grafana
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
-
 volumes:
-  pgdata:
-  qdrant_storage:
-  n8n_data:
-  grafana_data:
+  mandate_pgdata:

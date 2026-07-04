@@ -78,7 +78,7 @@
   3. "Automate" — "The agent handles payroll, rebalancing, yield, and reporting"
 
 ### Traction / Social Proof (placeholder)
-- "Backed by" — логотипы placeholder (Alliance DAO, Stellar Development Foundation)
+- "Backed by" — логотипы placeholder (CV Labs, Stellar Development Foundation)
 - "Managing $X in treasury" — placeholder metric
 - Или testimonial quote placeholder
 

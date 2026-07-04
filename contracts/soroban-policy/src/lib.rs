@@ -19,7 +19,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, Map, Vec,
+    contract, contractimpl, contracttype, Address, Env, Vec,
 };
 
 /// Storage keys for persistent contract state.
@@ -33,13 +33,15 @@ pub enum DataKey {
     DayTimestamp,      // u64: start of current day (unix timestamp)
     TimelockThreshold, // i128: amount above which 24h timelock applies
     Allowlist,         // Vec<Address>: approved recipient addresses
-    PendingTransfer,   // Map<u64, PendingTx>: time-locked transfers
+    NextPendingId,     // u64: auto-incrementing counter for pending transfer IDs
+    Pending(u64),      // PendingTx stored per-id
 }
 
 /// A pending time-locked transfer awaiting execution.
 #[derive(Clone)]
 #[contracttype]
 pub struct PendingTx {
+    pub id: u64,
     pub recipient: Address,
     pub amount: i128,
     pub asset: Address,
@@ -56,8 +58,19 @@ pub struct PolicyResult {
     pub reason: u32, // 0=ok, 1=over_single, 2=over_daily, 3=not_in_allowlist, 4=timelocked
 }
 
+/// Result of a queue operation.
+#[derive(Clone)]
+#[contracttype]
+pub struct QueueResult {
+    pub queued: bool,
+    pub pending_id: u64,
+    pub unlock_at: u64,
+}
+
 #[contract]
 pub struct MandatePolicy;
+
+const TIMELOCK_DURATION: u64 = 86400; // 24 hours in seconds
 
 #[contractimpl]
 impl MandatePolicy {
@@ -77,6 +90,7 @@ impl MandatePolicy {
         env.storage().persistent().set(&DataKey::TimelockThreshold, &timelock_threshold);
         env.storage().persistent().set(&DataKey::DailySpend, &0i128);
         env.storage().persistent().set(&DataKey::DayTimestamp, &env.ledger().timestamp());
+        env.storage().persistent().set(&DataKey::NextPendingId, &0u64);
 
         let empty_list: Vec<Address> = Vec::new(&env);
         env.storage().persistent().set(&DataKey::Allowlist, &empty_list);
@@ -148,7 +162,8 @@ impl MandatePolicy {
     }
 
     /// Approve a transfer and record the spend against daily limits.
-    /// Called by the agent after successful policy check.
+    /// If the amount exceeds the timelock threshold, the transfer must be
+    /// queued via `queue_transfer` instead.
     pub fn approve_transfer(
         env: Env,
         caller: Address,
@@ -162,12 +177,129 @@ impl MandatePolicy {
             return result;
         }
 
+        // If timelock is required, block direct approval
+        if result.requires_timelock {
+            return PolicyResult {
+                allowed: false,
+                requires_timelock: true,
+                reason: 4,
+            };
+        }
+
         // Record spend
         Self::maybe_reset_daily(&env);
         let daily_spend: i128 = env.storage().persistent().get(&DataKey::DailySpend).unwrap_or(0);
         env.storage().persistent().set(&DataKey::DailySpend, &(daily_spend + amount));
 
         result
+    }
+
+    // --- Timelock functions ---
+
+    /// Queue a transfer for time-locked execution. Required for amounts above
+    /// the timelock threshold. The transfer can be executed after `unlock_at`
+    /// (current timestamp + 24 hours).
+    pub fn queue_transfer(
+        env: Env,
+        proposer: Address,
+        recipient: Address,
+        amount: i128,
+        asset: Address,
+    ) -> QueueResult {
+        proposer.require_auth();
+
+        // Validate: must be above timelock threshold to require queuing
+        let timelock_threshold: i128 = env.storage().persistent().get(&DataKey::TimelockThreshold).unwrap_or(100_000_000_000);
+        if amount <= timelock_threshold {
+            panic!("amount below timelock threshold; use approve_transfer instead");
+        }
+
+        // Basic policy checks (daily limit, allowlist) still apply
+        let check = Self::check_transfer(env.clone(), recipient.clone(), amount);
+        if !check.allowed {
+            panic!("transfer not allowed by policy");
+        }
+
+        let next_id: u64 = env.storage().persistent().get(&DataKey::NextPendingId).unwrap_or(0);
+        let unlock_at = env.ledger().timestamp() + TIMELOCK_DURATION;
+
+        let pending = PendingTx {
+            id: next_id,
+            recipient,
+            amount,
+            asset,
+            unlock_at,
+            proposer,
+        };
+
+        env.storage().persistent().set(&DataKey::Pending(next_id), &pending);
+        env.storage().persistent().set(&DataKey::NextPendingId, &(next_id + 1));
+
+        QueueResult {
+            queued: true,
+            pending_id: next_id,
+            unlock_at,
+        }
+    }
+
+    /// Execute a pending time-locked transfer after the unlock period.
+    /// Records the spend against daily limits.
+    pub fn execute_pending(env: Env, caller: Address, pending_id: u64) -> PolicyResult {
+        caller.require_auth();
+
+        let pending: PendingTx = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Pending(pending_id))
+            .unwrap_or_else(|| panic!("pending transfer not found"));
+
+        // Check timelock has elapsed
+        let now = env.ledger().timestamp();
+        if now < pending.unlock_at {
+            panic!("timelock not elapsed");
+        }
+
+        // Check daily limit still allows it
+        Self::maybe_reset_daily(&env);
+        let daily_spend: i128 = env.storage().persistent().get(&DataKey::DailySpend).unwrap_or(0);
+        let daily_limit: i128 = env.storage().persistent().get(&DataKey::DailyLimit).unwrap_or(100_000_000_000);
+        if daily_spend + pending.amount > daily_limit {
+            return PolicyResult {
+                allowed: false,
+                requires_timelock: false,
+                reason: 2,
+            };
+        }
+
+        // Record spend and remove pending
+        env.storage().persistent().set(&DataKey::DailySpend, &(daily_spend + pending.amount));
+        env.storage().persistent().remove(&DataKey::Pending(pending_id));
+
+        PolicyResult {
+            allowed: true,
+            requires_timelock: false,
+            reason: 0,
+        }
+    }
+
+    /// Cancel a pending time-locked transfer. Only admin can cancel.
+    pub fn cancel_pending(env: Env, admin: Address, pending_id: u64) {
+        admin.require_auth();
+        Self::require_admin(&env, &admin);
+
+        if !env.storage().persistent().has(&DataKey::Pending(pending_id)) {
+            panic!("pending transfer not found");
+        }
+
+        env.storage().persistent().remove(&DataKey::Pending(pending_id));
+    }
+
+    /// Get details of a pending transfer.
+    pub fn get_pending(env: Env, pending_id: u64) -> PendingTx {
+        env.storage()
+            .persistent()
+            .get(&DataKey::Pending(pending_id))
+            .unwrap_or_else(|| panic!("pending transfer not found"))
     }
 
     // --- Admin functions ---
@@ -242,6 +374,7 @@ impl MandatePolicy {
 mod test {
     use super::*;
     use soroban_sdk::testutils::Address as _;
+    use soroban_sdk::testutils::Ledger;
     use soroban_sdk::Env;
 
     #[test]
@@ -321,5 +454,161 @@ mod test {
         let r2 = client.check_transfer(&blocked, &1_000_000_000);
         assert!(!r2.allowed);
         assert_eq!(r2.reason, 3);
+    }
+
+    #[test]
+    fn test_timelock_queue_and_early_execute_fails() {
+        let env = Env::default();
+        let contract_id = env.register_contract(None, MandatePolicy);
+        let client = MandatePolicyClient::new(&env, &contract_id);
+
+        let admin = Address::generate(&env);
+        let proposer = Address::generate(&env);
+        let recipient = Address::generate(&env);
+        let asset = Address::generate(&env);
+
+        env.mock_all_auths();
+
+        // single_limit high (200k), daily high (500k), timelock at 100k
+        client.initialize(&admin, &200_000_000_000, &500_000_000_000, &100_000_000_000);
+
+        // Transfer > timelock threshold requires queuing
+        let check = client.check_transfer(&recipient, &150_000_000_000);
+        assert!(check.allowed);
+        assert!(check.requires_timelock);
+        assert_eq!(check.reason, 4);
+
+        // approve_transfer should block for timelocked amounts
+        let approve = client.approve_transfer(&proposer, &recipient, &150_000_000_000);
+        assert!(!approve.allowed);
+        assert!(approve.requires_timelock);
+
+        // Queue the transfer
+        let queue_result = client.queue_transfer(
+            &proposer,
+            &recipient,
+            &150_000_000_000,
+            &asset,
+        );
+        assert!(queue_result.queued);
+        assert_eq!(queue_result.pending_id, 0);
+
+        // Verify pending transfer exists
+        let pending = client.get_pending(&0);
+        assert_eq!(pending.amount, 150_000_000_000);
+
+        // Try to execute early — should panic
+        let early_execute = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            client.execute_pending(&proposer, &0);
+        }));
+        assert!(early_execute.is_err(), "early execute should panic");
+    }
+
+    #[test]
+    fn test_timelock_execute_after_delay() {
+        let env = Env::default();
+        let contract_id = env.register_contract(None, MandatePolicy);
+        let client = MandatePolicyClient::new(&env, &contract_id);
+
+        let admin = Address::generate(&env);
+        let proposer = Address::generate(&env);
+        let recipient = Address::generate(&env);
+        let asset = Address::generate(&env);
+
+        env.mock_all_auths();
+
+        let initial_ts = 1_000_000u64;
+        env.ledger().set_timestamp(initial_ts);
+
+        // single_limit high, daily high, timelock at 100k
+        client.initialize(&admin, &200_000_000_000, &500_000_000_000, &100_000_000_000);
+
+        // Queue a transfer above timelock threshold
+        let queue_result = client.queue_transfer(
+            &proposer,
+            &recipient,
+            &150_000_000_000,
+            &asset,
+        );
+        assert!(queue_result.queued);
+        assert_eq!(queue_result.unlock_at, initial_ts + 86400);
+
+        // Advance time past the timelock period
+        env.ledger().set_timestamp(initial_ts + 86400 + 1);
+
+        // Now execute should succeed
+        let exec_result = client.execute_pending(&proposer, &queue_result.pending_id);
+        assert!(exec_result.allowed);
+        assert_eq!(exec_result.reason, 0);
+
+        // Pending transfer should be removed — trying to get it should panic
+        let get_removed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            client.get_pending(&queue_result.pending_id);
+        }));
+        assert!(get_removed.is_err(), "pending should be removed after execution");
+    }
+
+    #[test]
+    fn test_timelock_cancel() {
+        let env = Env::default();
+        let contract_id = env.register_contract(None, MandatePolicy);
+        let client = MandatePolicyClient::new(&env, &contract_id);
+
+        let admin = Address::generate(&env);
+        let proposer = Address::generate(&env);
+        let recipient = Address::generate(&env);
+        let asset = Address::generate(&env);
+
+        env.mock_all_auths();
+
+        client.initialize(&admin, &200_000_000_000, &500_000_000_000, &100_000_000_000);
+
+        // Queue a transfer
+        let queue_result = client.queue_transfer(
+            &proposer,
+            &recipient,
+            &150_000_000_000,
+            &asset,
+        );
+        assert!(queue_result.queued);
+
+        // Admin cancels
+        client.cancel_pending(&admin, &queue_result.pending_id);
+
+        // Trying to get it should panic
+        let get_cancelled = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            client.get_pending(&queue_result.pending_id);
+        }));
+        assert!(get_cancelled.is_err(), "cancelled pending should not exist");
+    }
+
+    #[test]
+    fn test_timelock_multiple_pending() {
+        let env = Env::default();
+        let contract_id = env.register_contract(None, MandatePolicy);
+        let client = MandatePolicyClient::new(&env, &contract_id);
+
+        let admin = Address::generate(&env);
+        let proposer = Address::generate(&env);
+        let recipient1 = Address::generate(&env);
+        let recipient2 = Address::generate(&env);
+        let asset = Address::generate(&env);
+
+        env.mock_all_auths();
+
+        client.initialize(&admin, &200_000_000_000, &500_000_000_000, &100_000_000_000);
+
+        // Queue two transfers
+        let q1 = client.queue_transfer(&proposer, &recipient1, &150_000_000_000, &asset);
+        let q2 = client.queue_transfer(&proposer, &recipient2, &120_000_000_000, &asset);
+
+        assert_eq!(q1.pending_id, 0);
+        assert_eq!(q2.pending_id, 1);
+
+        // Both should exist
+        let p1 = client.get_pending(&0);
+        assert_eq!(p1.amount, 150_000_000_000);
+        let p2 = client.get_pending(&1);
+        assert_eq!(p2.amount, 120_000_000_000);
     }
 }

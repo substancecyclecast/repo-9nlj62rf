@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-Land in DAO/crypto-native treasury market via accelerator networks (Alliance DAO), expand through Safe/Squads app ecosystems, then bridge to enterprise and traditional fintech customers.
+Land in DAO/crypto-native treasury market via accelerator networks (Stellar / CV Labs), expand through Safe/Squads app ecosystems, then bridge to enterprise and traditional fintech customers.
 
 **Year 1 target:** 50 paying orgs, $1M+ ARR.
 
@@ -17,10 +17,10 @@ Land in DAO/crypto-native treasury market via accelerator networks (Alliance DAO
 #### Strategy: Accelerator + Community-Led Growth
 
 **Actions:**
-1. **Alliance DAO application** (top priority)
+1. **Stellar / CV Labs Accelerator application** (top priority)
    - Demo: 15 contractors paid in 0.05s across 4 networks
    - Stellar angle: EMEA-focused, $0.00001/tx, 67% cheaper
-   - Mentors ARE the users (they run DAO treasuries)
+   - Accelerator network partners ARE the users (they run DAO treasuries)
 
 2. **Stellar Development Foundation**
    - Apply for Stellar Community Fund grant ($50K-$150K)
@@ -200,7 +200,7 @@ More customers → More payee data → Better routing → Lower costs → More c
 
 ### Month 1:
 - [ ] Deploy live demo (Vercel + Railway)
-- [ ] Submit Alliance DAO application
+- [ ] Submit Stellar / CV Labs Accelerator application
 - [ ] Submit Stellar Community Fund grant
 - [ ] Reach out to 20 DAOs directly
 - [ ] Publish "15 contractors in 0.05s" video
@@ -217,4 +217,4 @@ More customers → More payee data → Better routing → Lower costs → More c
 - [ ] First month of revenue ($5K+ MRR)
 - [ ] Safe App Store live
 - [ ] First case study published
-- [ ] Alliance DAO interview/decision
+- [ ] Stellar / CV Labs Accelerator interview/decision

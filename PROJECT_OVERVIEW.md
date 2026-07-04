@@ -21,7 +21,7 @@ an LLM rather than headcount."*
 the agent routes every payee to the cheapest chain (**Stellar for EMEA/Africa at
 $0.00001/tx**, EVM L2s elsewhere, or a local fiat rail), screens each for compliance,
 builds the multisig proposals, settles them, and produces a PDF report ready for a
-Deloitte auditor. Alliance DAO's mentors run Alliance DAO's own treasury — this is
+Deloitte auditor. Stellar ecosystem partners run real treasuries — this is
 *their* pain. They can sign a check before the Zoom call ends.
 
 **Stellar advantage:** For the 45+ EMEA/Africa countries where our contractors live,
@@ -69,7 +69,7 @@ crypto tools (Safe, Squads, Den, Utopia) are wallets, not finance teams.
    on/off-ramp faster than a bank ever could.
 6. **The pain is acute and universal.** Every DAO treasurer feels it monthly.
 7. **EMEA/Africa explosion.** Crypto adoption in Africa grew 1200% in 2020-2024.
-   EMEA-focused accelerators (Alliance DAO) specifically seek Stellar-native solutions.
+   EMEA-focused accelerators (Stellar / CV Labs) specifically seek Stellar-native solutions.
 
 ---
 
@@ -337,12 +337,12 @@ multiples (Ramp/Brex) imply a **$2–3B** valuation.
 
 ---
 
-## 10. Go-to-market (built for Alliance DAO)
+## 10. Go-to-market (built for Stellar / CV Labs Accelerator)
 
 - **Wedge:** payroll + bookkeeping for DAOs and crypto startups already on Safe/Squads.
-- **EMEA focus:** Stellar cross-border is the killer differentiator for Alliance DAO
-  (EMEA-focused accelerator). Show $0.00001/tx vs $6.20 Ethereum.
-- **Distribution:** Alliance DAO and accelerator networks first (mentors are users),
+- **EMEA focus:** Stellar cross-border is the killer differentiator for CV Labs
+  (Stellar-aligned accelerator). Show $0.00001/tx vs $6.20 Ethereum.
+- **Distribution:** Stellar / CV Labs accelerator networks first (mentors are users),
   then Safe/Squads app ecosystems, then the broader fintech market.
 - **Proof:** the "I just paid 15 contractors in 0.05 seconds across 4 networks" demo
   + auditor-grade PDF is a self-evident demo.
@@ -539,7 +539,7 @@ mandate/
 - It is **demonstrably real today**: this repository runs the entire flow end-to-end,
   offline, with balanced books, Stellar cross-border payments, and an auditor-ready
   report — not slides.
-- **Alliance DAO ready**: EMEA-focused, Stellar-native, demonstrable traction metrics,
+- **Stellar / CV Labs Accelerator ready**: EMEA-focused, Stellar-native, demonstrable traction metrics,
   and a demo that pays 15 contractors across 4 networks in 0.05 seconds.
 
 ---

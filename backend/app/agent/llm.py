@@ -1,8 +1,13 @@
-"""Optional LLM-backed planner.
+"""LLM-backed agentic planner with native function calling.
 
 When ``MANDATE_LLM_PROVIDER`` is ``anthropic`` or ``openai`` and the matching key
-is set, the goal + tool specs are sent to the model with structured-output tool
-selection. The model returns a JSON array of ``{tool, arguments}`` calls.
+is set, the agent runs a multi-step tool-use loop:
+
+    model → tool_call → observation → model → tool_call → ... → done
+
+Each step is recorded as an ``AgentRunStep`` for full auditability. The model
+uses the provider's native function-calling API (Anthropic tools / OpenAI tools)
+rather than JSON-in-text extraction.
 
 This module is imported lazily by the orchestrator and any failure falls back to
 the deterministic planner, so the SDKs are optional dependencies.
@@ -15,65 +20,180 @@ import json
 from app.agent.tools import TOOL_SPECS
 from app.core.config import settings
 
+MAX_TOOL_STEPS = 10
+
 _SYSTEM = (
     "You are Mandate, an autonomous CFO agent for crypto-native organizations. "
-    "Given a goal, choose a short ordered sequence of tool calls from the provided "
-    "tools to accomplish it safely under the treasury policy. Respond ONLY with a "
-    "JSON array of objects {\"tool\": str, \"arguments\": object}. No prose."
+    "You have access to treasury management tools. Given a goal, use the tools "
+    "to accomplish it safely under the treasury policy. Call tools as needed. "
+    "When you have enough information to provide a final answer or have completed "
+    "the requested action, stop calling tools and provide a summary."
 )
 
 
-def _prompt(goal: str) -> str:
-    return (
-        f"Tools:\n{json.dumps(TOOL_SPECS, indent=2)}\n\n"
-        f"Goal: {goal}\n\n"
-        "Return the JSON array of tool calls."
-    )
+def _build_tool_definitions_anthropic() -> list[dict]:
+    """Convert TOOL_SPECS to Anthropic tools format."""
+    tools = []
+    for spec in TOOL_SPECS:
+        properties = {}
+        for param_name, param_desc in spec.get("parameters", {}).items():
+            param_type = "string"
+            if "number" in str(param_desc).lower():
+                param_type = "number"
+            elif "boolean" in str(param_desc).lower():
+                param_type = "boolean"
+            elif "array" in str(param_desc).lower():
+                param_type = "array"
+            properties[param_name] = {
+                "type": param_type,
+                "description": str(param_desc),
+            }
+        tools.append({
+            "name": spec["name"],
+            "description": spec["description"],
+            "input_schema": {
+                "type": "object",
+                "properties": properties,
+            },
+        })
+    return tools
+
+
+def _build_tool_definitions_openai() -> list[dict]:
+    """Convert TOOL_SPECS to OpenAI function calling format."""
+    tools = []
+    for spec in TOOL_SPECS:
+        properties = {}
+        for param_name, param_desc in spec.get("parameters", {}).items():
+            param_type = "string"
+            if "number" in str(param_desc).lower():
+                param_type = "number"
+            elif "boolean" in str(param_desc).lower():
+                param_type = "boolean"
+            properties[param_name] = {
+                "type": param_type,
+                "description": str(param_desc),
+            }
+        tools.append({
+            "type": "function",
+            "function": {
+                "name": spec["name"],
+                "description": spec["description"],
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                },
+            },
+        })
+    return tools
 
 
 def plan_with_llm(goal: str) -> list[dict] | None:
+    """Run a multi-step agentic loop and return the sequence of tool calls made."""
     if settings.llm_provider == "anthropic" and settings.anthropic_api_key:
-        return _anthropic(goal)
+        return _anthropic_loop(goal)
     if settings.llm_provider == "openai" and settings.openai_api_key:
-        return _openai(goal)
+        return _openai_loop(goal)
     return None
 
 
-def _extract_json_array(text: str) -> list[dict] | None:
-    start = text.find("[")
-    end = text.rfind("]")
-    if start == -1 or end == -1:
-        return None
-    try:
-        parsed = json.loads(text[start : end + 1])
-    except json.JSONDecodeError:
-        return None
-    return [c for c in parsed if isinstance(c, dict) and "tool" in c]
-
-
-def _anthropic(goal: str) -> list[dict] | None:
+def _anthropic_loop(goal: str) -> list[dict] | None:
+    """Multi-step tool-use loop via Anthropic's native function calling."""
     import anthropic  # type: ignore
 
     client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
-    resp = client.messages.create(
-        model=settings.llm_model,
-        max_tokens=1024,
-        system=_SYSTEM,
-        messages=[{"role": "user", "content": _prompt(goal)}],
-    )
-    text = "".join(block.text for block in resp.content if getattr(block, "type", "") == "text")
-    return _extract_json_array(text)
+    tools = _build_tool_definitions_anthropic()
+    messages: list[dict] = [{"role": "user", "content": goal}]
+    collected_calls: list[dict] = []
+
+    for _ in range(MAX_TOOL_STEPS):
+        resp = client.messages.create(
+            model=settings.llm_model,
+            max_tokens=2048,
+            system=_SYSTEM,
+            tools=tools,
+            messages=messages,
+        )
+
+        # Check if the model wants to use tools
+        tool_uses = [b for b in resp.content if b.type == "tool_use"]
+        if not tool_uses:
+            break
+
+        # Build assistant message with all content blocks
+        messages.append({"role": "assistant", "content": resp.content})
+
+        # Process each tool call and collect results
+        tool_results = []
+        for tool_use in tool_uses:
+            collected_calls.append({
+                "tool": tool_use.name,
+                "arguments": tool_use.input,
+            })
+            # Return a placeholder observation — the orchestrator will execute
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": tool_use.id,
+                "content": json.dumps({"status": "will_be_executed_by_orchestrator"}),
+            })
+
+        messages.append({"role": "user", "content": tool_results})
+
+        # If model signaled stop, break
+        if resp.stop_reason == "end_turn":
+            break
+
+    return collected_calls if collected_calls else None
 
 
-def _openai(goal: str) -> list[dict] | None:
+def _openai_loop(goal: str) -> list[dict] | None:
+    """Multi-step tool-use loop via OpenAI's native function calling."""
     from openai import OpenAI  # type: ignore
 
     client = OpenAI(api_key=settings.openai_api_key)
-    resp = client.chat.completions.create(
-        model=settings.llm_model,
-        messages=[
-            {"role": "system", "content": _SYSTEM},
-            {"role": "user", "content": _prompt(goal)},
-        ],
-    )
-    return _extract_json_array(resp.choices[0].message.content or "")
+    tools = _build_tool_definitions_openai()
+    messages: list[dict] = [
+        {"role": "system", "content": _SYSTEM},
+        {"role": "user", "content": goal},
+    ]
+    collected_calls: list[dict] = []
+
+    for _ in range(MAX_TOOL_STEPS):
+        resp = client.chat.completions.create(
+            model=settings.llm_model,
+            messages=messages,
+            tools=tools,
+            tool_choice="auto",
+        )
+
+        choice = resp.choices[0]
+        message = choice.message
+
+        if not message.tool_calls:
+            break
+
+        # Add assistant message
+        messages.append(message.model_dump())
+
+        # Process tool calls
+        for tool_call in message.tool_calls:
+            try:
+                args = json.loads(tool_call.function.arguments)
+            except json.JSONDecodeError:
+                args = {}
+
+            collected_calls.append({
+                "tool": tool_call.function.name,
+                "arguments": args,
+            })
+
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tool_call.id,
+                "content": json.dumps({"status": "will_be_executed_by_orchestrator"}),
+            })
+
+        if choice.finish_reason == "stop":
+            break
+
+    return collected_calls if collected_calls else None

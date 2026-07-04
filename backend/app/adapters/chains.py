@@ -8,7 +8,7 @@ the Stellar network's native multi-auth mechanism.
 
 In sandbox mode these produce deterministic, well-formed identifiers so the
 multisig lifecycle (propose → collect signatures → execute) can be driven
-end-to-end. In live mode the same methods would call the Safe Transaction
+end-to-end. In live mode the same methods call the Safe Transaction
 Service / Squads program / Stellar Horizon + Soroban RPC.
 """
 
@@ -153,8 +153,8 @@ class StellarAdapter(Adapter):
     SEP-0030 for regulated custody. For cross-border EMEA/Africa payroll,
     Stellar offers sub-cent fees (~0.00001 USD) and 5-second finality.
 
-    In live mode, connects to Horizon API and Soroban RPC for smart-contract
-    policy enforcement via Soroban contracts.
+    In live mode, connects to Horizon API and builds/signs/submits real
+    transactions using the stellar-sdk.
     """
 
     name = "stellar"
@@ -172,7 +172,8 @@ class StellarAdapter(Adapter):
         """Build a Stellar transaction envelope for multisig approval.
 
         Sandbox: deterministic hash.
-        Live: calls Horizon API to fetch sequence, builds XDR envelope.
+        Live: builds a real XDR envelope, signs with MANDATE_STELLAR_SIGNING_KEY,
+        and submits to Horizon.
         """
         from app.core.config import settings
 
@@ -198,34 +199,83 @@ class StellarAdapter(Adapter):
     def _live_build_transfer(
         self, account: str, to: str, asset: str, amount: float, sequence: int, memo: str
     ) -> dict:
-        """Build a real Stellar transaction using Horizon API."""
-        import httpx
+        """Build and submit a real Stellar transaction using stellar-sdk."""
+        from stellar_sdk import (
+            Keypair,
+            Network,
+            Server,
+            TransactionBuilder,
+        )
+        from stellar_sdk.exceptions import BadRequestError
         from app.core.config import settings
 
-        # Fetch current sequence from Horizon
-        resp = httpx.get(f"{settings.stellar_horizon_url}/accounts/{account}")
-        if resp.status_code == 200:
-            seq = int(resp.json()["sequence"])
-        else:
-            seq = sequence
+        server = Server(horizon_url=settings.stellar_horizon_url)
+        network_passphrase = (
+            Network.PUBLIC_NETWORK_PASSPHRASE
+            if settings.stellar_is_mainnet
+            else Network.TESTNET_NETWORK_PASSPHRASE
+        )
 
-        tx_hash = _det_hash("stellar_", "stellar", account, to, asset, amount, seq)
-        return {
-            "type": "stellar_multisig_tx",
-            "chain": Chain.STELLAR,
-            "source_account": account,
-            "to": to,
-            "asset": asset,
-            "amount": amount,
-            "sequence": seq,
-            "memo": memo,
-            "tx_hash": tx_hash,
-            "network": settings.stellar_network,
-            "horizon_url": settings.stellar_horizon_url,
-            "soroban_rpc": settings.stellar_soroban_rpc,
-            "fee_stroops": 100,
-            "live": True,
-        }
+        source_keypair = Keypair.from_secret(settings.stellar_signing_key)
+        source_account = server.load_account(source_keypair.public_key)
+
+        stellar_asset = self._resolve_asset(asset, settings.stellar_network)
+
+        builder = TransactionBuilder(
+            source_account=source_account,
+            network_passphrase=network_passphrase,
+            base_fee=100,
+        )
+        builder.append_payment_op(
+            destination=to,
+            asset=stellar_asset,
+            amount=str(round(amount, 7)),
+        )
+        if memo:
+            builder.add_text_memo(memo[:28])
+        builder.set_timeout(300)
+
+        tx = builder.build()
+        tx.sign(source_keypair)
+
+        try:
+            resp = server.submit_transaction(tx)
+            tx_hash = resp["hash"]
+            ledger = resp.get("ledger", 0)
+            explorer_url = (
+                f"https://stellar.expert/explorer/testnet/tx/{tx_hash}"
+                if not settings.stellar_is_mainnet
+                else f"https://stellar.expert/explorer/public/tx/{tx_hash}"
+            )
+            return {
+                "type": "stellar_multisig_tx",
+                "chain": Chain.STELLAR,
+                "source_account": source_keypair.public_key,
+                "to": to,
+                "asset": asset,
+                "amount": amount,
+                "sequence": source_account.sequence,
+                "memo": memo,
+                "tx_hash": tx_hash,
+                "ledger": ledger,
+                "network": settings.stellar_network,
+                "horizon_url": settings.stellar_horizon_url,
+                "explorer_url": explorer_url,
+                "fee_stroops": 100,
+                "live": True,
+            }
+        except BadRequestError as exc:
+            return {
+                "type": "stellar_multisig_tx",
+                "chain": Chain.STELLAR,
+                "source_account": source_keypair.public_key,
+                "to": to,
+                "asset": asset,
+                "amount": amount,
+                "tx_hash": "",
+                "error": str(exc),
+                "live": True,
+            }
 
     def build_soroban_invoke(
         self,
@@ -240,6 +290,8 @@ class StellarAdapter(Adapter):
         tx_hash = _det_hash(
             "soroban_", contract_id, function_name, str(args), sequence
         )
+        from app.core.config import settings
+
         return {
             "type": "soroban_invoke",
             "chain": Chain.STELLAR,
@@ -249,7 +301,7 @@ class StellarAdapter(Adapter):
             "args": args,
             "sequence": sequence,
             "tx_hash": tx_hash,
-            "soroban_rpc": "https://soroban-rpc.mainnet.stellar.gateway.fm",
+            "soroban_rpc": settings.stellar_soroban_rpc,
         }
 
     def execute(self, *, safe_tx_hash: str) -> dict:
@@ -276,11 +328,14 @@ class StellarAdapter(Adapter):
     ) -> dict:
         """Build a Stellar path payment for cross-asset/cross-border settlement.
 
-        Stellar's path payment atomic DEX swap allows sending one asset
-        and the receiver getting another — ideal for EMEA/Africa corridors
-        where the sender holds USDC but the receiver wants local-currency
-        stablecoins (NGNC, EURC, etc.).
+        Sandbox: deterministic hash.
+        Live: builds and submits a real path_payment_strict_send via stellar-sdk.
         """
+        if self.is_live:
+            return self._live_build_path_payment(
+                account, to, send_asset, dest_asset, send_amount, dest_min, path, sequence
+            )
+
         tx_hash = _det_hash(
             "pathpay_", account, to, send_asset, dest_asset, send_amount, sequence
         )
@@ -297,6 +352,125 @@ class StellarAdapter(Adapter):
             "sequence": sequence,
             "tx_hash": tx_hash,
         }
+
+    def _live_build_path_payment(
+        self,
+        account: str,
+        to: str,
+        send_asset: str,
+        dest_asset: str,
+        send_amount: float,
+        dest_min: float,
+        path: list[str] | None,
+        sequence: int,
+    ) -> dict:
+        """Build and submit a real path payment on Stellar."""
+        from stellar_sdk import (
+            Keypair,
+            Network,
+            Server,
+            TransactionBuilder,
+        )
+        from stellar_sdk.exceptions import BadRequestError
+        from app.core.config import settings
+
+        server = Server(horizon_url=settings.stellar_horizon_url)
+        network_passphrase = (
+            Network.PUBLIC_NETWORK_PASSPHRASE
+            if settings.stellar_is_mainnet
+            else Network.TESTNET_NETWORK_PASSPHRASE
+        )
+
+        source_keypair = Keypair.from_secret(settings.stellar_signing_key)
+        source_account = server.load_account(source_keypair.public_key)
+
+        send_stellar_asset = self._resolve_asset(send_asset, settings.stellar_network)
+        dest_stellar_asset = self._resolve_asset(dest_asset, settings.stellar_network)
+
+        builder = TransactionBuilder(
+            source_account=source_account,
+            network_passphrase=network_passphrase,
+            base_fee=100,
+        )
+        builder.append_path_payment_strict_send_op(
+            destination=to,
+            send_asset=send_stellar_asset,
+            send_amount=str(round(send_amount, 7)),
+            dest_asset=dest_stellar_asset,
+            dest_min=str(round(dest_min, 7)),
+            path=[],
+        )
+        builder.set_timeout(300)
+
+        tx = builder.build()
+        tx.sign(source_keypair)
+
+        try:
+            resp = server.submit_transaction(tx)
+            tx_hash = resp["hash"]
+            explorer_url = (
+                f"https://stellar.expert/explorer/testnet/tx/{tx_hash}"
+                if not settings.stellar_is_mainnet
+                else f"https://stellar.expert/explorer/public/tx/{tx_hash}"
+            )
+            return {
+                "type": "stellar_path_payment",
+                "chain": Chain.STELLAR,
+                "source_account": source_keypair.public_key,
+                "to": to,
+                "send_asset": send_asset,
+                "dest_asset": dest_asset,
+                "send_amount": send_amount,
+                "dest_min": dest_min,
+                "path": path or [],
+                "sequence": source_account.sequence,
+                "tx_hash": tx_hash,
+                "explorer_url": explorer_url,
+                "live": True,
+            }
+        except BadRequestError as exc:
+            return {
+                "type": "stellar_path_payment",
+                "chain": Chain.STELLAR,
+                "source_account": source_keypair.public_key,
+                "to": to,
+                "send_asset": send_asset,
+                "dest_asset": dest_asset,
+                "send_amount": send_amount,
+                "tx_hash": "",
+                "error": str(exc),
+                "live": True,
+            }
+
+    @staticmethod
+    def _resolve_asset(code: str, network: str):
+        """Resolve an asset code to a Stellar Asset object.
+
+        For testnet, uses well-known issuer addresses; for mainnet, uses
+        the official Circle/SDF issuers.
+        """
+        from stellar_sdk import Asset
+
+        if code == "XLM":
+            return Asset.native()
+
+        # Mainnet issuers
+        _MAINNET_ISSUERS = {
+            "USDC": "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN",
+            "EURC": "GDHU6WRG4IEQXM5NZ4BMPKOXHW76MZM4Y36DAVIZA67UDAM4GS7UQFES",
+        }
+        # Testnet: use a placeholder issuer (bootstrap script creates these)
+        _TESTNET_ISSUERS = {
+            "USDC": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            "EURC": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+            "NGNC": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        }
+
+        issuers = _MAINNET_ISSUERS if network == "public" else _TESTNET_ISSUERS
+        issuer = issuers.get(code.upper())
+        if issuer:
+            return Asset(code.upper(), issuer)
+        return Asset(code.upper(), _TESTNET_ISSUERS.get("USDC", ""))
 
 
 _safe = SafeAdapter()

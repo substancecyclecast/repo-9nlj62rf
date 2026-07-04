@@ -28,7 +28,7 @@ jobs:
       - name: Run tests
         env:
           MANDATE_SEED: "0"
-        run: PYTHONPATH=. pytest -q
+        run: PYTHONPATH=. pytest -q -m "not onchain"
 
   frontend:
     name: Frontend — lint, typecheck, build
@@ -61,3 +61,28 @@ jobs:
       - name: Build contract
         working-directory: contracts/soroban-policy
         run: cargo build --target wasm32-unknown-unknown --release
+
+  onchain:
+    name: Stellar testnet — on-chain integration
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || contains(github.event.pull_request.labels.*.name, 'onchain')
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: On-chain tests (Stellar testnet)
+        env:
+          MANDATE_STELLAR_SIGNING_KEY: ${{ secrets.MANDATE_STELLAR_SIGNING_KEY }}
+          MANDATE_INTEGRATION_MODE: live
+          MANDATE_STELLAR_NETWORK: testnet
+        run: PYTHONPATH=. pytest -m onchain -v --tb=short

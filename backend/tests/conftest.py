@@ -11,6 +11,13 @@ from app.core.database import Base
 from app.services.seed import seed_demo
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line(
+        "markers",
+        "onchain: marks tests as on-chain integration tests requiring testnet keys",
+    )
+
+
 @pytest.fixture
 def db():
     engine = create_engine(

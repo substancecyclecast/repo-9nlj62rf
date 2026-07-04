@@ -132,9 +132,9 @@ No competitor has native Stellar cross-border + on-chain policy + multi-chain tr
 
 ### Land: Accelerator DAOs → Expand: Safe/Squads ecosystem
 
-**Phase 1 (0-3 months):** Alliance DAO + Stellar ecosystem
+**Phase 1 (0-3 months):** Stellar / CV Labs Accelerator + Stellar ecosystem
 - Sign 5-10 pilot DAOs (LOIs)
-- Alliance DAO mentors = first users (they run treasury)
+- CV Labs / Stellar accelerator network = first users (they run treasury)
 - Stellar Development Foundation grants/partnership
 
 **Phase 2 (3-6 months):** Safe App + Squads integration
@@ -171,7 +171,7 @@ No competitor has native Stellar cross-border + on-chain policy + multi-chain tr
 
 **Current:**
 - ✅ Full working product (not a prototype)
-- ✅ 38 tests passing (25 Stellar-specific)
+- ✅ 66 tests passing (25 Stellar-specific)
 - ✅ End-to-end tested (video proof)
 - ✅ 15 contractors paid across 4 networks in 0.05s
 - ✅ Cross-border calculator live (45+ countries)
@@ -199,7 +199,7 @@ No competitor has native Stellar cross-border + on-chain policy + multi-chain tr
 - [Relevant experience]
 
 **Advisory / Support:**
-- Alliance DAO (если примут)
+- CV Labs / SDF (Stellar ecosystem partner)
 - Stellar Development Foundation (ecosystem)
 
 *Looking for: CTO with Stellar/Rust experience, Head of BD with DAO network*
@@ -216,10 +216,10 @@ No competitor has native Stellar cross-border + on-chain policy + multi-chain tr
 - 20% Compliance & Legal (MiCA registration, SOC 2)
 - 10% Operations
 
-**What we need from Alliance DAO:**
+**What we need from Stellar / CV Labs:**
 - Mentorship (treasury management best practices)
-- Network (intro to 50+ DAOs for pilot)
-- Brand (credibility for enterprise customers)
+- Network (intro to 50+ DAOs and Stellar ecosystem partners)
+- Brand (credibility for enterprise customers + SDF endorsement)
 
 ---
 

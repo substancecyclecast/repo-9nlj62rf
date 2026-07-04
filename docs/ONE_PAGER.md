@@ -34,7 +34,7 @@
 - **Soroban policy engine** — On-chain spending limits, allowlists, timelocks
 - **RWA/T-Bills** — Tokenized US T-Bills (5.25% APY), MiCA-compliant
 - **Double-entry accounting** — Always balanced, auditor-ready PDF export
-- **38 tests passing** — Including 25 Stellar-specific
+- **66 tests passing** — Including 25 Stellar-specific
 
 ### BUSINESS MODEL
 
@@ -63,7 +63,7 @@
 
 ### GO-TO-MARKET
 
-**Phase 1:** Alliance DAO network → 5-10 pilot DAOs
+**Phase 1:** Stellar / CV Labs accelerator network → 5-10 pilot DAOs
 **Phase 2:** Safe App Store (6,000+ orgs) + Squads marketplace
 **Phase 3:** Enterprise crypto-native companies + white-label
 

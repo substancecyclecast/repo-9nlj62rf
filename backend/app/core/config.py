@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     stellar_horizon_url: str = "https://horizon-testnet.stellar.org"
     stellar_soroban_rpc: str = "https://soroban-testnet.stellar.org"
     stellar_signing_key: str = ""  # Secret key for auto-signing (testnet only)
+    soroban_contract_id: str = ""  # Deployed Soroban policy contract ID
 
     # --- Safe (EVM multisig) ---
     safe_tx_service_base: str = "https://safe-transaction-base.safe.global"

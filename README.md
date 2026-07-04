@@ -121,11 +121,39 @@ mandate/
 └── PROJECT_OVERVIEW.md
 ```
 
+## Stellar ecosystem impact
+
+Mandate brings **volume and users** to the Stellar network by routing cross-border
+payroll through Stellar's rails:
+
+- **45+ EMEA/Africa corridors** settled via Stellar anchors (NIBSS, M-Pesa, SEPA
+  Instant) — ~67% cheaper than SWIFT.
+- **Soroban on-chain policy** — spending limits, allowlists, and time-locked
+  withdrawals enforced via Soroban smart contracts on Stellar testnet.
+- **Path payments** — atomic USDC→EURC/NGNC swaps on Stellar DEX.
+- **RWA/T-Bills** — tokenized US T-Bills and EU bonds on Stellar.
+- Every payroll batch of 15 contractors generates 15+ Stellar transactions; at
+  scale (500 orgs × monthly payroll) this is **100K+ transactions/month** on
+  the Stellar network.
+
 ## Sandbox vs. live
 
 Everything defaults to **sandbox**: deterministic prices, multisig proposal building
 without private keys, and simulated execution — so the product is fully demonstrable
 offline. Set `MANDATE_INTEGRATION_MODE=live` and supply keys to wire the same
-adapters to real services (Safe Transaction Service, Squads, Li.Fi, Bridge.xyz).
+adapters to real services (Safe Transaction Service, Squads, Li.Fi, Bridge.xyz,
+**Stellar Horizon + Soroban RPC**).
 The agent can be upgraded from the deterministic planner to Claude/GPT by setting
 `MANDATE_LLM_PROVIDER` and the matching API key.
+
+### Stellar testnet mode
+
+```bash
+export MANDATE_INTEGRATION_MODE=live
+export MANDATE_STELLAR_NETWORK=testnet
+export MANDATE_STELLAR_SIGNING_KEY=S...  # testnet secret key
+```
+
+Run `python scripts/stellar_testnet_bootstrap.py` to fund accounts, set up
+trustlines, and create test asset liquidity. Then run a payroll batch to see
+**real transactions** in [Stellar Expert](https://stellar.expert/explorer/testnet).

@@ -9,9 +9,17 @@ Enable via MANDATE_AUTH_ENABLED=true in environment.
 
 from __future__ import annotations
 
+import sys
 import time
-from enum import StrEnum
 from typing import Optional
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        """Backport of StrEnum for Python <3.11."""
 
 import hashlib
 import hmac

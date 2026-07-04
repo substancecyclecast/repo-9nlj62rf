@@ -1,0 +1,70 @@
+# Default values for snabagent Helm chart
+
+replicaCount: 2
+
+api:
+  image:
+    repository: snabagent/api
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  port: 8000
+  resources:
+    limits:
+      cpu: "2"
+      memory: 4Gi
+    requests:
+      cpu: "500m"
+      memory: 1Gi
+
+ui:
+  image:
+    repository: snabagent/ui
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  port: 8501
+  resources:
+    limits:
+      cpu: "1"
+      memory: 2Gi
+    requests:
+      cpu: "250m"
+      memory: 512Mi
+
+env:
+  APP_ENV: "prod"
+  DATABASE_URL: "postgresql+asyncpg://snabagent:snabagent@postgres:5432/snabagent"
+  REDIS_URL: "redis://redis:6379"
+  QDRANT_HOST: "qdrant"
+  QDRANT_PORT: "6333"
+  SECRET_KEY: ""  # MUST be set
+  API_KEY: ""     # MUST be set
+  LLM_PRIMARY: "yandexgpt"
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: snabagent.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /
+          pathType: Prefix
+          service: ui
+  tls:
+    - secretName: snabagent-tls
+      hosts:
+        - snabagent.example.com
+
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

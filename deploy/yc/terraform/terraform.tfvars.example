@@ -1,0 +1,6 @@
+yc_token       = "AQAA..."
+yc_cloud_id    = "b1g..."
+yc_folder_id   = "b1g..."
+zone           = "ru-central1-a"
+ssh_user       = "ubuntu"
+ssh_pubkey_path = "~/.ssh/id_rsa.pub"

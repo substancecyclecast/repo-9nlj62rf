@@ -1,0 +1,39 @@
+Сырой запрос заказчика:
+"""
+{{ raw_request }}
+"""
+
+Возможный заказчик: {{ customer_name }}
+Текущая фаза закупки: {{ phase }}
+
+Ниже — фразы, которые удалось вычленить, и кандидаты из НСИ (top-5 по векторному поиску):
+
+{% for phrase, candidates in phrases.items() %}
+Фраза: "{{ phrase }}"
+Кандидаты:
+{% for c in candidates %}- sku={{ c.sku }} | name="{{ c.name }}" | category={{ c.category }} | unit={{ c.unit }} | gost={{ c.gost or '—' }} | typical_price={{ c.typical_price_rub }} | similarity={{ '%.3f'|format(c.score) }}
+{% endfor %}
+{% endfor %}
+
+Верни JSON по схеме:
+{
+  "items": [
+    {
+      "raw_phrase": "<исходная фраза>",
+      "matched_nsi_sku": "<SKU или null>",
+      "matched_nsi_name": "<полное имя из НСИ или null>",
+      "qty": <число>,
+      "unit": "<из НСИ>",
+      "lead_time_days": <число или null>,
+      "preferred_supplier_hint": "<строка или null>",
+      "confidence": <0..1>,
+      "alternatives": [
+        {"sku": "<SKU>", "name": "<...>", "score": <0..1>}
+      ]
+    }
+  ],
+  "category": "<одно из: mro|it|consumables|metals|chemistry|services>",
+  "overall_confidence": <0..1>,
+  "escalation_needed": <true|false>,
+  "escalation_reason": "<строка или null>"
+}

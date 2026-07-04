@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>SnabAgent — ROI калькулятор</title>
+<style>
+:root {
+  --brand: #143A75;
+  --accent: #FFB400;
+  --light: #F4F7FB;
+  --text: #222;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', -apple-system, system-ui, Roboto, sans-serif;
+  background: var(--light);
+  color: var(--text);
+  margin: 0;
+  padding: 24px;
+}
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+h1 { color: var(--brand); margin-top: 0; }
+h2 { color: var(--brand); margin-top: 24px; border-bottom: 2px solid var(--accent); padding-bottom: 6px; }
+.row { display: flex; gap: 16px; margin-bottom: 12px; }
+.row > div { flex: 1; }
+label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 14px; color: #555; }
+input[type=number], select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #CCD;
+  border-radius: 8px;
+  font-size: 16px;
+}
+.result {
+  background: var(--brand);
+  color: white;
+  padding: 24px;
+  border-radius: 12px;
+  margin-top: 24px;
+}
+.result h3 { margin: 0 0 12px 0; color: var(--accent); }
+.metric { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.2); }
+.metric:last-child { border-bottom: none; }
+.metric-name { opacity: 0.85; }
+.metric-value { font-weight: bold; }
+.metric-value.big { font-size: 22px; color: var(--accent); }
+.small { font-size: 13px; opacity: 0.7; margin-top: 16px; }
+.btn {
+  background: var(--accent);
+  color: var(--brand);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 12px;
+}
+.btn:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>SnabAgent — ROI калькулятор</h1>
+  <p>Оцените экономию от внедрения SnabAgent. Введите параметры вашего холдинга.</p>
+
+  <h2>1. Параметры закупочной деятельности</h2>
+  <div class="row">
+    <div>
+      <label>Лотов в год</label>
+      <input id="lots_per_year" type="number" value="20000" min="0" step="1000">
+    </div>
+    <div>
+      <label>Средняя сумма лота (₽)</label>
+      <input id="avg_lot_rub" type="number" value="3500000" min="0" step="50000">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Закупщиков (FTE)</label>
+      <input id="buyers" type="number" value="40" min="1">
+    </div>
+    <div>
+      <label>Зарплата закупщика (₽/мес, gross)</label>
+      <input id="salary" type="number" value="200000" min="0" step="10000">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Часов на лот сейчас (ручной труд)</label>
+      <input id="hours_per_lot" type="number" value="4" min="0" step="0.5">
+    </div>
+    <div>
+      <label>Ожидаемая экономия по цене лота (%)</label>
+      <input id="price_savings_pct" type="number" value="7" min="0" max="30" step="0.5">
+    </div>
+  </div>
+
+  <h2>2. Тариф SnabAgent</h2>
+  <div class="row">
+    <div>
+      <label>План</label>
+      <select id="plan">
+        <option value="pilot">Pilot (150 000 ₽/мес, до 500 лотов)</option>
+        <option value="pro" selected>Pro (850 000 ₽/мес, до 5 000 лотов)</option>
+        <option value="enterprise">Enterprise (4 500 000 ₽/мес, unlimited)</option>
+        <option value="onprem">On-prem (15 500 000 ₽ разово + 1 200 000 ₽/год)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="result" id="result">
+    <h3>Расчёт ROI</h3>
+    <div id="metrics"></div>
+    <div class="small">Формулы: <br>
+      • FTE-экономия = (часы/лот сейчас − 0.05 ч) × лотов/год × (зарплата/мес/176 ч)<br>
+      • Ценовая экономия = лотов/год × сумма_лота × (% экономии)<br>
+      • Окупаемость = годовая стоимость SnabAgent / месячная экономия<br>
+      • ROI = (общая экономия − стоимость) / стоимость × 100%
+    </div>
+  </div>
+</div>
+
+<script>
+const PLAN_PRICES = {
+  pilot: {mo: 150000, oneTime: 0, annual: 150000*12},
+  pro: {mo: 850000, oneTime: 0, annual: 850000*12},
+  enterprise: {mo: 4500000, oneTime: 0, annual: 4500000*12},
+  onprem: {mo: 100000, oneTime: 15500000, annual: 15500000 + 1200000},
+};
+
+function format(n) {
+  return new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 0}).format(n) + ' ₽';
+}
+function formatPct(n) {
+  return new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 1}).format(n) + '%';
+}
+
+function calc() {
+  const lots = +document.getElementById('lots_per_year').value || 0;
+  const avgLot = +document.getElementById('avg_lot_rub').value || 0;
+  const buyers = +document.getElementById('buyers').value || 0;
+  const salary = +document.getElementById('salary').value || 0;
+  const hpl = +document.getElementById('hours_per_lot').value || 0;
+  const savings = +document.getElementById('price_savings_pct').value || 0;
+  const plan = document.getElementById('plan').value;
+
+  const HOURLY = salary / 176; // 176 рабочих часов/мес
+  const FTE_HOURS_NOW = lots * hpl;
+  const FTE_HOURS_AFTER = lots * 0.05; // 3 мин на лот после внедрения
+  const FTE_SAVED_RUB = (FTE_HOURS_NOW - FTE_HOURS_AFTER) * HOURLY;
+
+  const PRICE_SAVED_RUB = lots * avgLot * (savings / 100);
+
+  const TOTAL_SAVED = FTE_SAVED_RUB + PRICE_SAVED_RUB;
+  const PRICE = PLAN_PRICES[plan].annual;
+  const NET = TOTAL_SAVED - PRICE;
+  const ROI = PRICE > 0 ? (NET / PRICE) * 100 : 0;
+  const PAYBACK_MONTHS = TOTAL_SAVED > 0 ? PRICE / (TOTAL_SAVED / 12) : 0;
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric">
+      <span class="metric-name">FTE-экономия в год</span>
+      <span class="metric-value">${format(FTE_SAVED_RUB)}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-name">Ценовая экономия в год (-${savings}% от среднерыночной)</span>
+      <span class="metric-value">${format(PRICE_SAVED_RUB)}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-name">Стоимость SnabAgent (1 год)</span>
+      <span class="metric-value">${format(PRICE)}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-name">Чистая экономия в год</span>
+      <span class="metric-value big">${format(NET)}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-name">ROI</span>
+      <span class="metric-value big">${formatPct(ROI)}</span>
+    </div>
+    <div class="metric">
+      <span class="metric-name">Окупаемость</span>
+      <span class="metric-value">${PAYBACK_MONTHS < 1 ? '< 1 месяца' : PAYBACK_MONTHS.toFixed(1) + ' мес'}</span>
+    </div>
+  `;
+}
+
+document.querySelectorAll('input, select').forEach(el => el.addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+[project]
+name = "snabagent"
+version = "2.2.0"
+description = "SnabAgent MVP — autonomous multi-agent procurement service (демо для Техлаба Москва)"
+requires-python = ">=3.11,<3.13"
+readme = "README.md"
+license = { text = "Proprietary" }
+authors = [
+    { name = "SnabAgent Team" },
+]
+
+dependencies = [
+    "fastapi==0.115.5",
+    "uvicorn[standard]==0.32.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.6.1",
+    "langgraph==0.2.50",
+    "langchain==0.3.7",
+    "langchain-core>=0.3.20",
+    "langchain-community==0.3.5",
+    "langchain-openai==0.2.8",
+    "qdrant-client==1.12.1",
+    "sentence-transformers==3.3.1",
+    "sqlalchemy==2.0.35",
+    "asyncpg==0.30.0",
+    "alembic==1.14.0",
+    "aiosmtplib==3.0.2",
+    "aioimaplib==1.1.0",
+    "beautifulsoup4==4.12.3",
+    "httpx>=0.27.2",
+    "tenacity==9.0.0",
+    "structlog==24.4.0",
+    "python-multipart>=0.0.27",
+    "python-docx==1.1.2",
+    "pypdf>=6.10.2",
+    "pdfplumber==0.11.4",
+    "openpyxl==3.1.5",
+    "faker==33.1.0",
+    "streamlit==1.40.2",
+    "plotly==5.24.1",
+    "pandas==2.2.3",
+    "redis==5.2.0",
+    "celery==5.4.0",
+    "jinja2>=3.1.5",
+    "websockets==13.1",
+    "jsonschema==4.23.0",
+    "python-jose[cryptography]==3.5.0",
+    "bcrypt>=4.0,<6.0",
+    "prometheus-client==0.21.1",
+    "slowapi==0.1.9",
+]
+
+[project.optional-dependencies]
+prod = [
+    "yandex-cloud-ml-sdk==0.5.0",
+    "gigachat==0.1.34",
+    "playwright==1.49.1",
+    "sentry-sdk[fastapi]>=2.19.0",
+    "flower>=2.0.1",
+]
+dev = [
+    "pytest==8.3.4",
+    "pytest-asyncio==0.24.0",
+    "pytest-cov==6.0.0",
+    "ruff==0.8.4",
+    "mypy==1.13.0",
+    "pre-commit==4.0.1",
+    "ipython==8.30.0",
+    "aiosqlite==0.20.0",
+    "bandit==1.8.0",
+    "pip-audit==2.7.3",
+]
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC", "PL"]
+# B008 — FastAPI использует Depends()/File() как дефолтные аргументы (стандартный паттерн)
+# PLR2004 — magic-числа в тестах/UI допустимы
+# PLR0911 — слишком много return-веток (бывает оправдано в диспатчерах)
+# B904 — допустимо raise без from
+# PLW2901 — overwriting loop var (бывает оправдано)
+ignore = ["PLR0913", "PLR0912", "PLR0915", "B008", "PLR2004", "PLR0911", "B904", "PLW2901"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.coverage.run]
+omit = [
+    "src/snabagent/ui/*",
+    "src/snabagent/agents/tools/web_scraper.py",
+    "src/snabagent/llm/openai.py",
+    "src/snabagent/llm/yandex.py",
+    "src/snabagent/llm/gigachat.py",
+    "src/snabagent/llm/llama.py",
+    "src/snabagent/parsers/pdf.py",
+    "src/snabagent/parsers/docx.py",
+    "src/snabagent/email_service/imap_poller.py",
+    "src/snabagent/api/routes/websocket.py",
+    "src/snabagent/tasks/*",
+]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_redundant_casts = true
+# NOTE: strict mode is intentionally disabled. mypy runs in advisory mode in CI
+# (see .github/workflows/ci.yml). Full --strict typing is tracked as tech debt.

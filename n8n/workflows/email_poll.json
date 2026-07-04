@@ -1,0 +1,49 @@
+{
+  "name": "SnabAgent — Email Poll",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "seconds", "secondsInterval": 30 }] }
+      },
+      "id": "1",
+      "name": "Every 30s",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "format": "raw",
+        "options": { "criteria": "UNSEEN" }
+      },
+      "id": "2",
+      "name": "IMAP UNSEEN",
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "credentials": { "imap": { "id": "1", "name": "SnabAgent IMAP" } }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SERVICE_PUBLIC_URL}}/webhooks/email-in",
+        "options": { "rawBody": true },
+        "sendBody": true,
+        "bodyContentType": "raw",
+        "rawContentType": "message/rfc822",
+        "rawBody": "={{$binary.data.toString('utf8')}}"
+      },
+      "id": "3",
+      "name": "POST email-in",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Every 30s": { "main": [[{ "node": "IMAP UNSEEN", "type": "main", "index": 0 }]] },
+    "IMAP UNSEEN": { "main": [[{ "node": "POST email-in", "type": "main", "index": 0 }]] }
+  },
+  "settings": {},
+  "active": true
+}

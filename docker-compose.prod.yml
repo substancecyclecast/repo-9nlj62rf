@@ -1,0 +1,110 @@
+# Production overlay: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Adds: Caddy (TLS), Flower (Celery monitoring), production settings.
+# Removes: dev ports for internal services, code volume mounts.
+
+services:
+  postgres:
+    ports: []
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-snabagent}
+    restart: unless-stopped
+
+  qdrant:
+    ports: []
+    restart: unless-stopped
+
+  redis:
+    ports: []
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    restart: unless-stopped
+
+  api:
+    command: uvicorn snabagent.api.main:app --host 0.0.0.0 --port 8000 --workers 4 --log-level warning
+    volumes:
+      - ./data:/app/data
+    ports: []
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  worker:
+    command: celery -A snabagent.tasks.celery_app worker -l INFO -Q lots,emails -c 4 --max-tasks-per-child=100
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    env_file: .env
+    depends_on:
+      - redis
+    command: celery -A snabagent.tasks.celery_app beat -l INFO --scheduler celery.beat:PersistentScheduler
+    restart: unless-stopped
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    env_file: .env
+    depends_on:
+      - redis
+      - worker
+    command: celery -A snabagent.tasks.celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-changeme}
+    restart: unless-stopped
+
+  streamlit:
+    command: streamlit run /app/src/snabagent/ui/streamlit_app.py --server.port=8501 --server.address=0.0.0.0 --server.headless=true
+    volumes:
+      - ./data:/app/data
+    ports: []
+    restart: unless-stopped
+
+  n8n:
+    ports: []
+    restart: unless-stopped
+
+  prometheus:
+    ports: []
+    restart: unless-stopped
+
+  grafana:
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASS}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SERVER_ROOT_URL=https://${DOMAIN}/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    ports: []
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    depends_on:
+      - api
+      - streamlit
+      - n8n
+      - grafana
+      - flower
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

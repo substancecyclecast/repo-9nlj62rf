@@ -1,0 +1,154 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "title": "HTTP requests rate (1m)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (path) (rate(snabagent_http_requests_total[1m]))",
+          "legendFormat": "{{path}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "HTTP 5xx errors (1m)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (path) (rate(snabagent_http_requests_total{status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx {{path}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "HTTP latency p95 (s)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, path) (rate(snabagent_http_request_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{path}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Lots created/min",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 12, "y": 8, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "sum(rate(snabagent_lots_created_total[1m])) * 60", "refId": "A"}
+      ]
+    },
+    {
+      "title": "Lots finished/min",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 18, "y": 8, "w": 6, "h": 4},
+      "targets": [
+        {"expr": "sum(rate(snabagent_lots_finished_total[1m])) * 60", "refId": "A"}
+      ]
+    },
+    {
+      "title": "Lots finished by status",
+      "type": "piechart",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (status) (snabagent_lots_finished_total)",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Lot pipeline duration p95 (s)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(snabagent_lot_run_duration_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(snabagent_lot_run_duration_seconds_bucket[5m])))",
+          "legendFormat": "p50",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "title": "LLM requests by model",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(snabagent_llm_requests_total[5m]))",
+          "legendFormat": "{{model}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "LLM latency p95 by model (s)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, model) (rate(snabagent_llm_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95 {{model}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Escalations sent (n8n)",
+      "type": "timeseries",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 0, "y": 32, "w": 12, "h": 8},
+      "targets": [
+        {
+          "expr": "sum by (severity) (rate(snabagent_escalations_total[5m]))",
+          "legendFormat": "{{severity}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "title": "Active WS connections",
+      "type": "stat",
+      "datasource": {"type": "prometheus", "uid": "prom"},
+      "gridPos": {"x": 12, "y": 32, "w": 12, "h": 8},
+      "targets": [
+        {"expr": "snabagent_active_ws_connections", "refId": "A"}
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["snabagent", "procurement"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "timezone": "browser",
+  "title": "SnabAgent Production",
+  "uid": "snabagent-prod",
+  "version": 1
+}

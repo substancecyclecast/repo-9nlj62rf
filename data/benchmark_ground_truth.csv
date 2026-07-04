@@ -1,0 +1,11 @@
+scenario_id,scenario_name,scenario_file,category,expected_min_items,expected_max_items,expected_min_savings_pct,expected_max_savings_pct,expected_status,confidence_min
+1,metals_pipe,tz_metal_dirty.txt,metals,3,6,5.0,20.0,report_ready,0.7
+2,it_servers,tz_it_dirty.txt,it,4,8,5.0,18.0,report_ready,0.7
+3,chemistry_reagents,tz_chemistry_dirty.txt,chemistry,4,9,5.0,18.0,report_ready,0.7
+4,metals_sheet_steel,tz_metal_sheet.txt,metals,2,5,2.0,20.0,report_ready,0.65
+5,it_laptops,tz_it_laptops.txt,it,3,7,5.0,15.0,report_ready,0.7
+6,chemistry_solvents,tz_chemistry_solvents.txt,chemistry,3,7,5.0,18.0,report_ready,0.7
+7,metals_fittings,tz_metal_fittings.txt,metals,3,6,5.0,17.0,report_ready,0.7
+8,it_network,tz_it_network.txt,it,3,7,5.0,15.0,report_ready,0.7
+9,chemistry_polymers,tz_chemistry_polymers.txt,chemistry,3,6,5.0,18.0,report_ready,0.7
+10,metals_steel_rolls,tz_metal_rolls.txt,metals,2,5,5.0,15.0,report_ready,0.7

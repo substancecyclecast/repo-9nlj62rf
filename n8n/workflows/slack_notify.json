@@ -1,0 +1,35 @@
+{
+  "name": "SnabAgent — Slack notify",
+  "nodes": [
+    {
+      "parameters": { "path": "slack-notify", "responseMode": "lastNode", "options": {} },
+      "id": "1",
+      "name": "Webhook /slack-notify",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.SLACK_WEBHOOK_URL}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "text", "value": "SnabAgent {{$json.kind || 'event'}}\\nLot: {{$json.lot_id}}\\nMessage: {{$json.message}}" }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Slack incoming-webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [500, 300]
+    }
+  ],
+  "connections": {
+    "Webhook /slack-notify": { "main": [[{ "node": "Slack incoming-webhook", "type": "main", "index": 0 }]] }
+  },
+  "settings": {},
+  "active": true
+}

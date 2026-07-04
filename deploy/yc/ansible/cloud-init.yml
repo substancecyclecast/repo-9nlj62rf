@@ -1,0 +1,41 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose-plugin
+  - git
+  - python3-pip
+  - ufw
+
+users:
+  - name: ${ssh_user}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - ${ssh_public_key}
+
+write_files:
+  - path: /etc/snabagent/.env.skeleton
+    permissions: '0600'
+    content: |
+      APP_ENV=prod
+      DEMO_MODE=false
+      LLM_PRIMARY=yandex
+      LLM_FALLBACK=gigachat
+      LLM_VERIFIER=gigachat
+      POSTGRES_PASSWORD=__REPLACE_ME__
+      LLM_YC_FOLDER_ID=__REPLACE_ME__
+      LLM_YC_AUTH_TOKEN=__REPLACE_ME__
+      LLM_GIGACHAT_AUTH_KEY=__REPLACE_ME__
+
+runcmd:
+  - sudo ufw allow OpenSSH
+  - sudo ufw allow 80
+  - sudo ufw allow 443
+  - sudo ufw --force enable
+  - sudo systemctl enable --now docker
+  - sudo usermod -aG docker ${ssh_user}
+  - mkdir -p /opt/snabagent
+  - chown -R ${ssh_user}:${ssh_user} /opt/snabagent
+  - echo "SnabAgent VM ready. Шаги: git clone, cp .env, docker compose up -d" > /etc/motd

@@ -1,0 +1,11 @@
+Лот #{{ lot_short_id }}, категория: {{ category }}.
+
+Поставщик: {{ supplier_name }} (ИНН {{ supplier_inn }}).
+Исторический партнёр: {{ is_historical }}
+Историческая средняя цена по этой категории: {{ historical_avg_rub | thousands }} ₽
+
+Текущее предложение: {{ offer_total_price | thousands }} ₽ за {{ offer_qty }} {{ offer_unit }}.
+Минимальное предложение по этому лоту: {{ min_total_rub | thousands }} ₽
+Средняя цена по конкурентам: {{ avg_competitor_price | thousands }} ₽
+
+Дай рекомендацию по скидке (см. правила в системном промпте).

@@ -1,0 +1,56 @@
+groups:
+  - name: snabagent_critical
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate (>5%) detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: LLMTimeout
+        expr: rate(llm_request_duration_seconds_count{status="timeout"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LLM provider timeouts detected"
+          description: "LLM requests are timing out. Check provider connectivity."
+
+      - alert: EmailDeliveryFailure
+        expr: rate(email_send_total{status="failed"}[10m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Email delivery failures"
+          description: "More than 0.5 email failures per second over 10 minutes."
+
+      - alert: DiskSpaceHigh
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) < 0.2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk space usage >80%"
+          description: "Free disk space is below 20% on root partition."
+
+      - alert: CeleryWorkerDown
+        expr: up{job="celery-worker"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Celery worker is down"
+          description: "Celery worker has been unavailable for 2+ minutes."
+
+      - alert: PostgresDown
+        expr: up{job="snabagent-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API/PostgreSQL is down"
+          description: "The snabagent API is unreachable."

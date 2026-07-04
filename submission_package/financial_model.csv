@@ -1,0 +1,22 @@
+parameter,unit,value,notes
+snabbers_per_customer,headcount,60,Снабженцев в службе у крупного заказчика
+requests_per_month,n,4800,Заявок на службу в месяц
+avg_nmck_rub,rub,320000,Средняя НМЦК заявки
+hours_per_request_manual,h,6,Часов на «заявку→3 КП» вручную
+fot_per_hour_rub,rub,1800,ФОТ снабженца в час (полная стоимость)
+inefficiency_loss_pct,share,0.07,Потери на неоптимальном выборе
+hours_per_request_with_snabagent,h,1,Часов на «контроль + эскалации»
+inefficiency_loss_pct_after,share,0.025,Потери после внедрения
+license_per_seat_per_month_rub,rub,25000,Лицензия SnabAgent
+seats,headcount,60,Лицензированных мест
+hosting_per_year_rub,rub,3600000,Хостинг + поддержка
+implementation_cost_rub,rub,3000000,Стоимость внедрения (раз в 3 года)
+manual_year_rub,rub,622080000,4800*6*1800*12
+inefficiency_year_rub,rub,1290240000,4800*320000*0.07*12
+as_is_total_year_rub,rub,1912320000,manual+inefficiency
+manual_year_after_rub,rub,103680000,4800*1*1800*12
+inefficiency_year_after_rub,rub,460800000,4800*320000*0.025*12
+license_year_rub,rub,18000000,60*25000*12
+to_be_total_year_rub,rub,586780000,manual+inefficiency+license+hosting+implementation/3
+saving_year_rub,rub,1325540000,as_is-to_be
+roi_on_license_x,x,73.6,saving/license

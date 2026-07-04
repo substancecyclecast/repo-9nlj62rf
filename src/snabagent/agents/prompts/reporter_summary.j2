@@ -1,0 +1,11 @@
+Ты — менеджер по снабжению. Сделай краткое резюме (3–4 предложения) по результатам сбора ТКП.
+
+Лот: {{ lot_summary }}
+Получено КП: {{ n_responses }}
+Прошло верификацию: {{ n_verified }}
+Top-1: {{ top1.supplier_name }} ({{ top1.total_price_rub | thousands }} ₽, {{ top1.lead_time_days }} дн)
+Top-2: {{ top2.supplier_name }} ({{ top2.total_price_rub | thousands }} ₽, {{ top2.lead_time_days }} дн)
+Top-3: {{ top3.supplier_name }} ({{ top3.total_price_rub | thousands }} ₽, {{ top3.lead_time_days }} дн)
+Экономия vs средне-рыночной: {{ savings_pct }}% ({{ savings_rub | thousands }} ₽)
+
+Рекомендуй (одной фразой), какого поставщика выбрать и почему. Не используй маркетинговую лексику. Только факты.

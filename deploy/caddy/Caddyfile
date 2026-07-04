@@ -1,0 +1,63 @@
+{$DOMAIN:demo.snabagent.ru} {
+    encode zstd gzip
+
+    # Security headers
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        -Server
+    }
+
+    # WebSocket — dedicated matcher
+    @ws path /ws/lots/* /lots/ws/*
+    handle @ws {
+        reverse_proxy api:8000
+    }
+
+    # API: backend routes
+    @api path /lots* /webhooks* /health* /docs* /openapi.json /redoc /api/*
+    handle @api {
+        reverse_proxy api:8000
+    }
+
+    # Grafana — behind /grafana/
+    @grafana path /grafana/*
+    handle @grafana {
+        uri strip_prefix /grafana
+        reverse_proxy grafana:3000
+    }
+
+    # Flower (Celery monitoring) — protected
+    @flower path /flower/*
+    handle @flower {
+        uri strip_prefix /flower
+        reverse_proxy flower:5555
+    }
+
+    # n8n under /n8n/
+    @n8n path /n8n/*
+    handle @n8n {
+        uri strip_prefix /n8n
+        reverse_proxy n8n:5678
+    }
+
+    # Prometheus (internal, but accessible for dashboards)
+    @prom path /prometheus/*
+    handle @prom {
+        uri strip_prefix /prometheus
+        reverse_proxy prometheus:9090
+    }
+
+    # Frontend — Streamlit UI (default)
+    handle {
+        reverse_proxy streamlit:8501
+    }
+
+    log {
+        output stdout
+        format json
+        level WARN
+    }
+}

@@ -1,0 +1,87 @@
+{
+  "name": "SnabAgent — Escalation",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "escalation",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook /escalation",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            {
+              "operation": "equal",
+              "value1": "={{$json[\"severity\"]}}",
+              "value2": "high"
+            },
+            {
+              "operation": "equal",
+              "value1": "={{$json[\"severity\"]}}",
+              "value2": "medium"
+            }
+          ]
+        }
+      },
+      "id": "2",
+      "name": "Switch severity",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{$env.TELEGRAM_ESCALATION_CHAT_ID}}" },
+            { "name": "text", "value": "🚨 SnabAgent ESCALATION (HIGH)\\nLot: {{$json.lot_id}}\\nReason: {{$json.reason}}\\nLink: {{$env.SERVICE_PUBLIC_URL}}/lots/{{$json.lot_id}}" }
+          ]
+        }
+      },
+      "id": "3",
+      "name": "Telegram (HIGH)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{$env.TELEGRAM_ESCALATION_CHAT_ID}}" },
+            { "name": "text", "value": "⚠ SnabAgent escalation (medium)\\nLot: {{$json.lot_id}}" }
+          ]
+        }
+      },
+      "id": "4",
+      "name": "Telegram (MED)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [700, 400]
+    }
+  ],
+  "connections": {
+    "Webhook /escalation": { "main": [[{ "node": "Switch severity", "type": "main", "index": 0 }]] },
+    "Switch severity": {
+      "main": [
+        [{ "node": "Telegram (HIGH)", "type": "main", "index": 0 }],
+        [{ "node": "Telegram (MED)", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {},
+  "active": true
+}

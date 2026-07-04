@@ -76,4 +76,4 @@ Seeking pre-seed funding and accelerator support to:
 
 ---
 
-**Contact:** [email] | **Demo:** [URL] | **GitHub:** github.com/Nadirpliline/wltxipiv
+**Contact:** [email] | **Demo:** `docker compose up` | **GitHub:** github.com/substancecyclecast/repo-9nlj62rf | **SCF Application:** [`docs/SCF_APPLICATION.md`](./SCF_APPLICATION.md)

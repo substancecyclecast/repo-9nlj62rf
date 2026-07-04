@@ -1,11 +1,15 @@
 # Mandate — Autonomous CFO Agent for Crypto-Native Orgs & DAOs
 
+[![CI](https://github.com/substancecyclecast/repo-9nlj62rf/actions/workflows/ci.yml/badge.svg)](https://github.com/substancecyclecast/repo-9nlj62rf/actions) ![Python 3.12](https://img.shields.io/badge/python-3.12-blue) ![Tests](https://img.shields.io/badge/tests-66%20passing-brightgreen) ![Stellar](https://img.shields.io/badge/Stellar-testnet%20live-blueviolet)
+
 > Connect your Safe / Squads multisig. Mandate sees incoming payments, converts to
 > your chosen stablecoin, rebalances the treasury by policy, pays payroll and vendors
 > in 90+ countries, keeps double-entry on-chain books, and prepares auditor-ready
 > reports — driven by an LLM agent, not humans.
 
 **Stripe Atlas + Rippling + Brex, for the on-chain world.**
+
+> **Stellar Community Fund / CV Labs Accelerator candidate.** See [`docs/SCF_APPLICATION.md`](./docs/SCF_APPLICATION.md) for the full application.
 
 This repository is a complete, runnable product (MMP), not a mockup. Every flow
 below works end-to-end in **sandbox mode with no API keys or private keys**:
@@ -52,7 +56,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-**Frontend** (Node 20):
+**Frontend** (Node 22):
 
 ```bash
 cd frontend
@@ -126,15 +130,17 @@ mandate/
 Mandate brings **volume and users** to the Stellar network by routing cross-border
 payroll through Stellar's rails:
 
-- **45+ EMEA/Africa corridors** settled via Stellar anchors (NIBSS, M-Pesa, SEPA
-  Instant) — ~67% cheaper than SWIFT.
-- **Soroban on-chain policy** — spending limits, allowlists, and time-locked
-  withdrawals enforced via Soroban smart contracts on Stellar testnet.
-- **Path payments** — atomic USDC→EURC/NGNC swaps on Stellar DEX.
-- **RWA/T-Bills** — tokenized US T-Bills and EU bonds on Stellar.
-- Every payroll batch of 15 contractors generates 15+ Stellar transactions; at
-  scale (500 orgs × monthly payroll) this is **100K+ transactions/month** on
-  the Stellar network.
+| Feature | Detail |
+|---------|--------|
+| **Cross-border corridors** | 45+ EMEA/Africa countries via Stellar anchors (NIBSS, M-Pesa, SEPA Instant) |
+| **Cost advantage** | ~67% cheaper than SWIFT ($0.00001/tx vs $25–50) |
+| **Soroban policy engine** | On-chain spending limits, allowlists, 24h time-locked withdrawals |
+| **Path payments** | Atomic USDC→EURC/NGNC swaps on Stellar DEX |
+| **RWA/T-Bills** | Tokenized US T-Bills (5.25% APY) and EU bonds on Stellar |
+| **Volume at scale** | 500 orgs × monthly payroll = **100K+ tx/month** on Stellar |
+
+See [`docs/SCF_APPLICATION.md`](./docs/SCF_APPLICATION.md) for the full Stellar
+Community Fund application with impact metrics and budget breakdown.
 
 ## Sandbox vs. live
 

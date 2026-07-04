@@ -43,7 +43,7 @@ End-User Application
 - Real Stellar testnet transactions verified (payment + path payment + Soroban policy check)
 - Live demo: 15 contractors paid across 4 networks in 0.05 seconds
 - 7-screen dashboard: Treasury, CFO Agent, Payroll, Stellar & RWA, Ledger, Billing, Settings
-- Deployed on Vercel: https://frontend-livid-eta-jp0rtaykhc.vercel.app
+- Deployed on Vercel: https://mandatecfo.vercel.app
 - GitHub repository with full CI (backend lint+tests, frontend typecheck+build, Soroban build)
 - Testnet bootstrap script that creates accounts, funds via Friendbot, sets up trustlines, creates DEX liquidity, and submits a real payment — all automated
 
@@ -55,7 +55,7 @@ Evidence:
 
 ## Website
 
-https://frontend-livid-eta-jp0rtaykhc.vercel.app
+https://mandatecfo.vercel.app
 
 ---
 

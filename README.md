@@ -2,7 +2,7 @@
 
 [![CI](https://img.shields.io/badge/CI-passing-brightgreen.svg)](.github/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org)
-[![License: Proprietary](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Code style: ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Автономный мульти-агентный сервис закупок: «грязная» заявка → 6 поставщиков → 3 коммерческих предложения → сравнительная таблица с обоснованием. Все решения логируются и аудируются.
@@ -252,4 +252,4 @@ snabagent/
 
 ## Лицензия
 
-Internal — Confidential.
+[MIT](LICENSE) © 2026 SnabAgent Team.

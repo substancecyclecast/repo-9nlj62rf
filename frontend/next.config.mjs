@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const API_BASE = process.env.MANDATE_API_BASE || "http://localhost:8000";
+// Note: for Vercel production, set MANDATE_API_BASE=http://your-server:8000
 
 const nextConfig = {
   reactStrictMode: true,

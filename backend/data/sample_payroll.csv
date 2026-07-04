@@ -1,0 +1,16 @@
+name,email,country,role,amount_usd,chain,asset,wallet_address,prefers_fiat,memo
+Aisha Bello,aisha@helios.xyz,NG,Smart Contract Engineer,8500,stellar,USDC,GAISHA7BELLO0STELLAR00000000000000000000000000000NGPAY,false,June engineering (Stellar)
+Diego Santos,diego@helios.xyz,BR,DevRel,6200,solana,USDC,DiegoSo1anaWa11et000000000000000000000000,false,June devrel
+Mei Tanaka,mei@helios.xyz,JP,Designer,5400,base,USDC,0xMe1000000000000000000000000000000Tanaka1,false,June design
+Liam O'Connor,liam@helios.xyz,IE,Backend Engineer,7800,,USDC,0xL1am0000000000000000000000000000Connor11,false,June backend
+Priya Nair,priya@helios.xyz,IN,Data Scientist,7200,,USDC,0xPr1ya0000000000000000000000000000Na1r001,false,June data
+Tomas Novak,tomas@helios.xyz,CZ,Security Auditor,9100,stellar,USDC,GTOMAS7NOVAK00STELLAR0000000000000000000000000000CZPAY0,false,June security (Stellar EMEA)
+Sofia Rossi,sofia@helios.xyz,IT,Product Manager,8800,,USDC,,true,June PM (fiat via SEPA)
+Kwame Asante,kwame@helios.xyz,GH,Protocol Engineer,4300,stellar,USDC,GKWAME7ASANTE0STELLAR0000000000000000000000000000GHPAY,false,June community (Stellar Africa)
+Yuki Sato,yuki@helios.xyz,JP,Frontend Engineer,7600,base,USDC,0xYuk1000000000000000000000000000000Sat001,false,June frontend
+Carlos Vega,carlos@helios.xyz,MX,DevOps,7000,,USDC,,true,June devops (fiat via SPEI)
+Fatima Al-Rashid,fatima@helios.xyz,AE,BD Lead EMEA,6600,stellar,USDC,GFATIMA7ALRASHID0STELLAR000000000000000000000000AEPAY,false,June growth (Stellar MENA)
+Amina Diallo,amina@helios.xyz,SN,Community Lead Africa,4500,stellar,USDC,GAMINA7DIALLO00STELLAR0000000000000000000000000SNPAY0,false,June Africa community (Stellar)
+Lars Eriksson,lars@helios.xyz,SE,Compliance Officer,9200,stellar,EURC,GLARS77ERIKSSON0STELLAR0000000000000000000000000SEPAY,false,June compliance (EURC on Stellar)
+Pierre Dubois,pierre@helios.xyz,FR,Tokenomics,8100,stellar,EURC,GPIERRE7DUBOIS0STELLAR0000000000000000000000000FRPAY0,false,June tokenomics (EURC on Stellar)
+Nadia Petrova,nadia@helios.xyz,BG,QA Engineer,5200,stellar,USDC,GNADIA7PETROVA0STELLAR0000000000000000000000000BGPAY0,false,June QA (Stellar EMEA)

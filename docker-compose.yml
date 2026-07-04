@@ -1,0 +1,45 @@
+services:
+  backend:
+    build: ./backend
+    container_name: mandate-backend
+    environment:
+      # Default to Postgres in compose; the app falls back to SQLite if unset.
+      MANDATE_DATABASE_URL: postgresql+psycopg://mandate:mandate@db:5432/mandate
+      MANDATE_INTEGRATION_MODE: sandbox
+      MANDATE_CORS_ORIGINS: "*"
+      MANDATE_SEED: "1"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    container_name: mandate-frontend
+    environment:
+      MANDATE_API_BASE: http://backend:8000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: mandate-db
+    environment:
+      POSTGRES_USER: mandate
+      POSTGRES_PASSWORD: mandate
+      POSTGRES_DB: mandate
+    ports:
+      - "5432:5432"
+    volumes:
+      - mandate_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mandate"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mandate_pgdata:

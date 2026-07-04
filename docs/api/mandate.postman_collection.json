@@ -1,0 +1,1161 @@
+{
+  "info": {
+    "name": "Mandate API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "description": "Authenticate and receive a JWT access token.\n\nIn sandbox mode (auth disabled), returns a dev token for the default org.\nIn production, verifies Privy token or wallet signature."
+      }
+    },
+    {
+      "name": "Get Me",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/me",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "me"
+          ]
+        },
+        "description": "Get current authenticated user info."
+      }
+    },
+    {
+      "name": "Invite User",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/invite",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "invite"
+          ]
+        },
+        "description": "Invite a new user to the current organization."
+      }
+    },
+    {
+      "name": "Update User Role",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/users/{user_id}/role",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "users",
+            "{user_id}",
+            "role"
+          ]
+        },
+        "description": "Update a user's role within the organization."
+      }
+    },
+    {
+      "name": "Remove User",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/users/{user_id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "users",
+            "{user_id}"
+          ]
+        },
+        "description": "Remove a user from the organization."
+      }
+    },
+    {
+      "name": "List Orgs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Overview",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/overview",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "overview"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Wallets",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/wallets",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "wallets"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Yield Positions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/yield",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "yield"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Recommendations",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/recommendations",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "recommendations"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Tools",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/agent/tools",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "agent",
+            "tools"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Run Agent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/agent/run",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "agent",
+            "run"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Runs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/agent/runs",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "agent",
+            "runs"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Get Run",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/agent/runs/{run_id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "agent",
+            "runs",
+            "{run_id}"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Invoke Tool",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/agent/tool",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "agent",
+            "tool"
+          ]
+        },
+        "description": "Invoke a single agent tool directly (used by the frontend Stellar page)."
+      }
+    },
+    {
+      "name": "Contractors",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/contractors",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "contractors"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Upload Payroll",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/upload",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "upload"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Create Sample Payroll",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/sample",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "sample"
+          ]
+        },
+        "description": "One-click demo: build a batch from the bundled sample contractor CSV."
+      }
+    },
+    {
+      "name": "Create Payroll Json",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/json",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "json"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Batches",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/batches",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "batches"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Get Batch",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/batches/{batch_id}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "batches",
+            "{batch_id}"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Propose Batch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/batches/{batch_id}/propose",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "batches",
+            "{batch_id}",
+            "propose"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Execute Batch",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/payroll/batches/{batch_id}/execute",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "payroll",
+            "batches",
+            "{batch_id}",
+            "execute"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Create Transfer",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/transfers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "transfers"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Transactions",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/transactions",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "transactions"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Swap Quote",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/swap/quote",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "swap",
+            "quote"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Yield Venues",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/yield/venues",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "yield",
+            "venues"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Yield Deploy",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/yield/deploy",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "yield",
+            "deploy"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Trial Balance",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/ledger/trial-balance",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "ledger",
+            "trial-balance"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Income Statement",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/ledger/income-statement",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "ledger",
+            "income-statement"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Journal",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/ledger/journal",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "ledger",
+            "journal"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Quickbooks Journal Csv",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/reports/quickbooks.csv",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "reports",
+            "quickbooks.csv"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Transactions Csv",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/reports/transactions.csv",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "reports",
+            "transactions.csv"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Auditor Report",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/reports/auditor.pdf",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "reports",
+            "auditor.pdf"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Audit",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/audit",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "audit"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "List Webhook Deliveries",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/webhooks/deliveries",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "webhooks",
+            "deliveries"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Test Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/webhooks/test",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "webhooks",
+            "test"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Billing Summary",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/billing/summary",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "billing",
+            "summary"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Billing Invoice",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/orgs/{org_id}/billing/invoice",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "orgs",
+            "{org_id}",
+            "billing",
+            "invoice"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Prometheus Metrics",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/metrics",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "metrics"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Liveness",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/healthz",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "healthz"
+          ]
+        },
+        "description": "Liveness probe \u2014 process is up."
+      }
+    },
+    {
+      "name": "Readiness",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/readyz",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "readyz"
+          ]
+        },
+        "description": "Readiness probe \u2014 process is up *and* the database is reachable."
+      }
+    },
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        },
+        "description": ""
+      }
+    },
+    {
+      "name": "Root",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": []
+        },
+        "description": ""
+      }
+    }
+  ]
+}

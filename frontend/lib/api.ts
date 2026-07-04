@@ -1,14 +1,11 @@
 // Lightweight typed API client for the Mandate backend.
-// When NEXT_PUBLIC_API_BASE is set (production), calls go directly to the backend.
-// Otherwise we hit the same origin and rely on Next.js rewrites to proxy
+// In the browser we hit the same origin and rely on Next.js rewrites to proxy
 // /api/* to the FastAPI service (see next.config.mjs).
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "";
 
 export const ORG_ID = 1;
 
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}/api/v1${path}`, {
+  const res = await fetch(`/api/v1${path}`, {
     ...init,
     headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
     cache: "no-store",
@@ -249,7 +246,7 @@ export const api = {
     const form = new FormData();
     form.append("file", file);
     const res = await fetch(
-      `${API_BASE}/api/v1/orgs/${ORG_ID}/payroll/upload?name=${encodeURIComponent(name)}`,
+      `/api/v1/orgs/${ORG_ID}/payroll/upload?name=${encodeURIComponent(name)}`,
       { method: "POST", body: form }
     );
     if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`);
@@ -283,12 +280,12 @@ export const api = {
     http<WebhookDelivery[]>(`/orgs/${ORG_ID}/webhooks/deliveries?limit=${limit}`),
   testWebhook: () =>
     http<{ delivered: WebhookDelivery[] }>(`/orgs/${ORG_ID}/webhooks/test`, { method: "POST" }),
-  readiness: () => fetch(`${API_BASE}/readyz`).then((r) => r.json() as Promise<Readiness>),
+  readiness: () => fetch(`/readyz`).then((r) => r.json() as Promise<Readiness>),
 
   reportUrls: {
-    auditorPdf: `${API_BASE}/api/v1/orgs/${ORG_ID}/reports/auditor.pdf`,
-    quickbooksCsv: `${API_BASE}/api/v1/orgs/${ORG_ID}/reports/quickbooks.csv`,
-    transactionsCsv: `${API_BASE}/api/v1/orgs/${ORG_ID}/reports/transactions.csv`,
+    auditorPdf: `/api/v1/orgs/${ORG_ID}/reports/auditor.pdf`,
+    quickbooksCsv: `/api/v1/orgs/${ORG_ID}/reports/quickbooks.csv`,
+    transactionsCsv: `/api/v1/orgs/${ORG_ID}/reports/transactions.csv`,
   },
 };
 

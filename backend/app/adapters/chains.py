@@ -106,6 +106,7 @@ class SafeAdapter(Adapter):
     def _live_execute(self, safe_tx_hash: str) -> dict:
         """Execute a fully-signed Safe transaction."""
         import httpx
+
         from app.core.config import settings
 
         service_url = settings.safe_tx_service_base
@@ -207,6 +208,7 @@ class StellarAdapter(Adapter):
             TransactionBuilder,
         )
         from stellar_sdk.exceptions import BadRequestError
+
         from app.core.config import settings
 
         server = Server(horizon_url=settings.stellar_horizon_url)
@@ -372,6 +374,7 @@ class StellarAdapter(Adapter):
             TransactionBuilder,
         )
         from stellar_sdk.exceptions import BadRequestError
+
         from app.core.config import settings
 
         server = Server(horizon_url=settings.stellar_horizon_url)

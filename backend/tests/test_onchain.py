@@ -31,7 +31,7 @@ class TestStellarTestnetPayment:
 
     def test_real_payment(self):
         """Submit a real XLM payment on testnet and verify via Horizon."""
-        from stellar_sdk import Keypair, Network, Server, TransactionBuilder, Asset
+        from stellar_sdk import Asset, Keypair, Network, Server, TransactionBuilder
 
         signing_key = os.environ["MANDATE_STELLAR_SIGNING_KEY"]
         source_kp = Keypair.from_secret(signing_key)
@@ -65,7 +65,7 @@ class TestStellarTestnetPayment:
 
     def test_real_path_payment_strict_send(self):
         """Verify path_payment_strict_send builds correctly (dry-run)."""
-        from stellar_sdk import Keypair, Network, Server, TransactionBuilder, Asset
+        from stellar_sdk import Asset, Keypair, Network, Server, TransactionBuilder
 
         signing_key = os.environ["MANDATE_STELLAR_SIGNING_KEY"]
         source_kp = Keypair.from_secret(signing_key)
@@ -105,8 +105,9 @@ class TestStellarAdapterLive:
 
     def test_live_build_transfer(self):
         """StellarAdapter._live_build_transfer submits a real tx."""
-        from app.adapters.chains import StellarAdapter
         from stellar_sdk import Keypair
+
+        from app.adapters.chains import StellarAdapter
 
         os.environ["MANDATE_INTEGRATION_MODE"] = "live"
         os.environ["MANDATE_STELLAR_NETWORK"] = "testnet"

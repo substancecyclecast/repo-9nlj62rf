@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.models import PayrollBatch, Payment
+from app.models import Payment, PayrollBatch
 
 
 def _month_key(dt: datetime) -> str:

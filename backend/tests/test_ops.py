@@ -7,7 +7,6 @@ import pytest
 from app.core.metrics import MetricsRegistry
 from app.services import audit_service, billing_service, payroll_service, webhooks
 
-
 # --- Metrics registry ---
 
 def test_metrics_counter_and_prometheus_render():

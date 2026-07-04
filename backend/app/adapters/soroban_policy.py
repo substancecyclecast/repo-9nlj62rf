@@ -111,8 +111,8 @@ class SorobanPolicyAdapter(Adapter):
         max_daily_usd: float,
     ) -> PolicyCheckResult:
         """Invoke the deployed Soroban contract's check_transfer function."""
-        from stellar_sdk import Keypair, Network, SorobanServer, scval
-        from stellar_sdk import TransactionBuilder
+        from stellar_sdk import Keypair, Network, SorobanServer, TransactionBuilder, scval
+
         from app.core.config import settings
 
         contract_id = settings.soroban_contract_id or POLICY_CONTRACT_ID

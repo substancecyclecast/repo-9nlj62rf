@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import pytest
 
-
 # --- Config tests ---
 
 def test_config_has_all_live_keys():
@@ -58,6 +57,7 @@ def test_auth_role_permissions():
 def test_auth_user_require_permission():
     """require_permission raises on denied actions."""
     from fastapi import HTTPException
+
     from app.core.auth import AuthUser, Role
 
     member = AuthUser(user_id="u1", org_id=1, role=Role.MEMBER)
@@ -70,7 +70,7 @@ def test_auth_user_require_permission():
 
 def test_jwt_encode_decode():
     """JWT encode → decode roundtrip works."""
-    from app.core.auth import _encode_jwt, _decode_jwt
+    from app.core.auth import _decode_jwt, _encode_jwt
 
     payload = {"sub": "user-123", "org_id": 1, "role": "admin", "email": "a@b.com", "exp": 9999999999}
     token = _encode_jwt(payload)
@@ -83,7 +83,8 @@ def test_jwt_encode_decode():
 def test_jwt_expired_token():
     """Expired JWT is rejected."""
     from fastapi import HTTPException
-    from app.core.auth import _encode_jwt, _decode_jwt
+
+    from app.core.auth import _decode_jwt, _encode_jwt
 
     payload = {"sub": "user-123", "org_id": 1, "role": "admin", "exp": 1}  # long expired
     token = _encode_jwt(payload)
@@ -264,7 +265,7 @@ def test_yellowcard_quote():
 
 def test_get_best_offramp_routing():
     """Off-ramp router selects cheapest provider per country."""
-    from app.adapters.live_offramp import get_best_offramp, CowrieAdapter, FlutterwaveAdapter, BridgeLiveAdapter
+    from app.adapters.live_offramp import BridgeLiveAdapter, CowrieAdapter, FlutterwaveAdapter, get_best_offramp
 
     assert isinstance(get_best_offramp("NG"), CowrieAdapter)
     assert isinstance(get_best_offramp("KE"), FlutterwaveAdapter)

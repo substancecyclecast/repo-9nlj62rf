@@ -35,6 +35,7 @@ __pycache__/
 
 # test/build artifacts
 *.db
+data/sent_emails/
 data/offline_demo_results.json
 data/benchmark_results.json
 coverage.xml

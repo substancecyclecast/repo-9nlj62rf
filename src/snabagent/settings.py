@@ -2,6 +2,7 @@
 
 Все секреты — только из `.env` или env-переменных, никогда не в коде.
 """
+
 from __future__ import annotations
 
 from typing import Literal
@@ -9,7 +10,7 @@ from typing import Literal
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-LLMName = Literal["fake", "yandex", "gigachat", "llama", "openai"]
+LLMName = Literal["fake", "yandex", "gigachat", "llama", "openai", "qwen"]
 
 
 class LLMSettings(BaseSettings):
@@ -46,15 +47,34 @@ class LLMSettings(BaseSettings):
     openai_model: str = "gpt-4.1"
     enable_openai_in_prod: bool = False
 
+    # Qwen Cloud (Alibaba DashScope, OpenAI-compatible) — основной провайдер для хакатона.
+    # Глобальный/Singapore endpoint. Для China-региона: https://dashscope.aliyuncs.com/compatible-mode/v1
+    qwen_api_key: SecretStr = SecretStr("")
+    qwen_base_url: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    # Сильная модель для reasoning (Planner / Reporter / primary).
+    qwen_model: str = "qwen-max"
+    # ОТДЕЛЬНАЯ модель для верификатора — обязана отличаться от primary (anti-hallucination).
+    qwen_verifier_model: str = "qwen-plus"
+    # Быстрая/дешёвая модель для лёгких агентов (опционально).
+    qwen_fast_model: str = "qwen-flash"
+    enable_qwen_in_prod: bool = True
+
     model_config = SettingsConfigDict(env_prefix="LLM_", env_file=".env", extra="ignore")
 
     @model_validator(mode="after")
     def _verifier_must_differ_in_real_mode(self) -> LLMSettings:
-        """Гарантируем, что verifier != primary, когда не FakeLLM (anti-hallucination)."""
+        """Гарантируем, что verifier != primary, когда не FakeLLM (anti-hallucination).
+
+        Для Qwen допускаем primary=verifier=`qwen`, если МОДЕЛИ различаются
+        (qwen_model != qwen_verifier_model) — тогда независимая верификация сохраняется.
+        """
         if self.primary != "fake" and self.primary == self.verifier:
+            if self.primary == "qwen" and self.qwen_model != self.qwen_verifier_model:
+                return self
             raise ValueError(
                 f"LLM_VERIFIER ({self.verifier}) must differ from LLM_PRIMARY ({self.primary}). "
-                "Verifier MUST use a different model to catch primary's hallucinations."
+                "Verifier MUST use a different model to catch primary's hallucinations. "
+                "For Qwen you may keep both 'qwen' as long as LLM_QWEN_MODEL != LLM_QWEN_VERIFIER_MODEL."
             )
         return self
 
@@ -170,9 +190,7 @@ class Settings(BaseSettings):
                     "Set a strong random API_KEY for production."
                 )
             if self.embedding_backend == "fake":
-                raise ValueError(
-                    "EMBEDDING_BACKEND=fake запрещён в prod. Установите 'sentence-transformers' или 'yandex'."
-                )
+                raise ValueError("EMBEDDING_BACKEND=fake запрещён в prod. Установите 'sentence-transformers' или 'yandex'.")
         return self
 
 

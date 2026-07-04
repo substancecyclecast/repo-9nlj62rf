@@ -1,4 +1,5 @@
 """Sourcer — собирает кандидатов поставщиков из трёх источников и ранкирует через LLM."""
+
 from __future__ import annotations
 
 import json
@@ -6,6 +7,7 @@ from typing import Any
 
 from ..audit import write_audit
 from ..llm.router import complete_with_fallback
+from ..memory.store import apply_reliability_boost
 from ..settings import settings
 from ..vector import qdrant_client
 from ..vector.embeddings import embed_queries
@@ -68,8 +70,19 @@ async def sourcer_node(state: LotState) -> dict[str, Any]:
         seen[inn] = c
     candidates = list(seen.values())[:30]
 
+    # MemoryAgent: подмешиваем накопленную надёжность поставщиков из памяти,
+    # чтобы LLM-ранкер учитывал прошлый опыт работы с ними.
+    memory = state.get("memory") or {}
+    supplier_memory = memory.get("supplier_memory") or {}
+    candidates = apply_reliability_boost(candidates, supplier_memory)
+    n_with_memory = sum(1 for c in candidates if c.get("memory_seen_before"))
+
     # LLM-ранжирование
-    system = "Ты — ранкер поставщиков, возвращай валидный JSON."
+    system = (
+        "Ты — ранкер поставщиков, возвращай валидный JSON. "
+        "Если у кандидата есть memory_reliability — это накопленный опыт работы с ним; "
+        "при прочих равных предпочитай проверенных поставщиков с высоким скором."
+    )
     user = prompts.render(
         "sourcer_user.j2",
         candidates_json=json.dumps(candidates, ensure_ascii=False),
@@ -92,6 +105,7 @@ async def sourcer_node(state: LotState) -> dict[str, Any]:
                 "vector": len(vec),
                 "spark": len(spark),
             },
+            "candidates_with_memory": n_with_memory,
         },
         output_payload={"top": ranked[:6]},
         prompt_text=user[:3000],

@@ -1,4 +1,5 @@
 """LangGraph state-объект для лота."""
+
 from __future__ import annotations
 
 from operator import add
@@ -25,6 +26,12 @@ class LotState(TypedDict, total=False):
     negotiations: list[dict]
     verifications: list[dict]
     report: dict | None
+
+    # Persistent memory (MemoryAgent): подгружается узлом memory_recall в начале графа.
+    #   profile      — предпочтения компании (цена/срок/качество)
+    #   supplier_memory — накопленные скоры надёжности поставщиков (по ИНН)
+    #   past_lots    — похожие прошлые лоты и решения
+    memory: dict
 
     status: str
     audit_events: Annotated[list[dict], add]

@@ -103,7 +103,7 @@ jobs:
           EMBEDDING_BACKEND: fake
           DATABASE_URL: sqlite+aiosqlite:///./bench.db
         run: python scripts/benchmark.py --min-accuracy 0.70
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: offline-demo-results
           path: |
